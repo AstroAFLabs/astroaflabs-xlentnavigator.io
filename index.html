@@ -1163,6 +1163,57 @@ const exampleCentresGeoJSON = {
     const adelaideMarker = L.marker([-34.9285, 138.6007]).addTo(map);
     adelaideMarker.bindPopup('<b>Hello Ben!</b><br>This is Adelaide on OSM.');
 
+    // --- Build Leaflet layers from exampleCentresGeoJSON ---
+const centreLayers = {};
+
+centreLayers['centres-day'] = L.geoJSON(exampleCentresGeoJSON, {
+  filter: f => f.properties && f.properties.type === 'day',
+  pointToLayer: (feature, latlng) =>
+    L.circleMarker(latlng, {
+      radius: 7,
+      color: '#2563eb',
+      fillColor: '#2563eb',
+      fillOpacity: 1,
+      weight: 1.5
+    }).bindPopup(
+      `<b>${feature.properties.name || 'Centre'}</b><br>` +
+      `${feature.properties.address || ''}<br>` +
+      `<span style="color:#6b7280;font-size:11px;">Type: day</span>`
+    )
+}).addTo(map);
+
+centreLayers['centres-medical'] = L.geoJSON(exampleCentresGeoJSON, {
+  filter: f => f.properties && f.properties.type === 'medical',
+  pointToLayer: (feature, latlng) =>
+    L.circleMarker(latlng, {
+      radius: 7,
+      color: '#16a34a',
+      fillColor: '#16a34a',
+      fillOpacity: 1,
+      weight: 1.5
+    }).bindPopup(
+      `<b>${feature.properties.name || 'Centre'}</b><br>` +
+      `${feature.properties.address || ''}<br>` +
+      `<span style="color:#6b7280;font-size:11px;">Type: medical</span>`
+    )
+}).addTo(map);
+
+centreLayers['centres-social'] = L.geoJSON(exampleCentresGeoJSON, {
+  filter: f => f.properties && f.properties.type === 'social',
+  pointToLayer: (feature, latlng) =>
+    L.circleMarker(latlng, {
+      radius: 7,
+      color: '#f97316',
+      fillColor: '#f97316',
+      fillOpacity: 1,
+      weight: 1.5
+    }).bindPopup(
+      `<b>${feature.properties.name || 'Centre'}</b><br>` +
+      `${feature.properties.address || ''}<br>` +
+      `<span style="color:#6b7280;font-size:11px;">Type: social</span>`
+    )
+}).addTo(map);
+
     let clickMarker = null;
     let userLocationMarker = null;
 
@@ -2228,18 +2279,31 @@ restoreRouteFromStorage();
     // --- Layer visibility toggles from the legend UI ---
 const layerLegendEl = document.getElementById("layer-legend");
 
+i// --- Layer visibility toggles from the legend UI (Leaflet version) ---
+const layerLegendEl = document.getElementById('layer-legend');
+
 if (layerLegendEl) {
-  const checkboxes = layerLegendEl.querySelectorAll('input[type="checkbox"][data-layer]');
+  const checkboxes = layerLegendEl.querySelectorAll(
+    'input[type="checkbox"][data-layer]'
+  );
+
   checkboxes.forEach((cb) => {
-    cb.addEventListener("change", (e) => {
+    cb.addEventListener('change', (e) => {
       const layerId = e.target.dataset.layer;
-      const visible = e.target.checked ? "visible" : "none";
-      if (map.getLayer(layerId)) {
-        map.setLayoutProperty(layerId, "visibility", visible);
+      const checked = e.target.checked;
+
+      const layer = centreLayers[layerId];
+      if (!layer) return;
+
+      if (checked) {
+        layer.addTo(map);
+      } else {
+        map.removeLayer(layer);
       }
     });
   });
 }
+
 // --- Collapsible behaviour for the legend chip ---
 const legendToggleBtn = document.getElementById("legend-toggle");
 
