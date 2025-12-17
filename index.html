@@ -1,0 +1,2254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OSM Route Planner</title>
+
+  <!-- Leaflet CSS -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#1e88e5" />
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: rgba(15, 23, 42, 0.94);
+      --card-border: rgba(148, 163, 184, 0.35);
+      --accent: #22c55e;
+      --accent-soft: rgba(34, 197, 94, 0.14);
+      --accent-strong: #16a34a;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #ef4444;
+      --chip-bg: rgba(15, 23, 42, 0.8);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body {
+      position: relative;
+    }
+
+    #map {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    /* App header badge */
+    #app-header {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      font-size: 13px;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
+    }
+
+    #app-header-logo {
+      width: 22px;
+      height: 22px;
+      border-radius: 9px;
+      background: radial-gradient(circle at 30% 30%, #22c55e, #0ea5e9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0b1120;
+    }
+
+    #app-header-title {
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+
+    .legend {
+                line-height: 18px;
+                color: #333;
+                background: #fff;
+                padding: 6px 8px;
+                font: 12px/14px Arial, Helvetica, sans-serif;
+                box-shadow: 0 0 15px rgba(0,0,0,.2);
+                border-radius: 5px;
+            }
+
+            .legend i {
+                width: 14px;
+                height: 14px;
+                display: inline-block;
+                vertical-align: middle;
+                margin-right: 6px;
+                border-radius: 50%;
+            }
+
+            .leaflet-tooltip {
+                white-space: normal !important;
+                word-wrap: break-word;
+                max-width: 1000px !important;
+                min-width: 400px;
+                font-size: 14px;
+            }
+    
+    /* Navigation HUD chip */
+    #nav-hud {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 5;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--chip-bg);
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+      max-width: calc(100% - 24px);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      backdrop-filter: blur(6px);
+    }
+
+    /* Info text in bottom panel */
+    #info-text {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* Floating primary button (locate) */
+    #fab-locate {
+      position: absolute;
+      right: 12px;
+      bottom: 168px;
+      z-index: 5;
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      border: none;
+      background: #0ea5e9;
+      color: #0b1120;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
+      font-size: 22px;
+      cursor: pointer;
+    }
+
+    /* Floating toggle for main panel */
+    #fab-panel {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 10px;
+      z-index: 5;
+      width: 54px;
+      height: 54px;
+      border-radius: 999px;
+      border: none;
+      background: var(--accent);
+      color: #022c22;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.9);
+      font-size: 24px;
+      cursor: pointer;
+    }
+
+    #fab-panel span {
+      transform: translateY(-1px);
+    }
+
+    /* Main control panel (bottom sheet) */
+    #control-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+
+  padding: 10px 12px 14px;
+  background: var(--card-bg);
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  border-top: 1px solid var(--card-border);
+  box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.9);
+      transform: translateY(calc(100% - 56px));  /* only ~56px remains visible */
+      transition: transform 0.28s ease;
+     /* Layout */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  /* NEW: scrolling when open */
+  max-height: 65vh;                    /* panel never covers more than ~65% of screen height */
+  overflow-y: auto;                    /* show scrollbar when content is taller */
+  -webkit-overflow-scrolling: touch;   /* smooth scrolling on mobile */
+}
+
+    #control-panel.open {
+      transform: translateY(0);
+    }
+
+    #panel-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    #panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    #panel-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .pill-button {
+      padding: 4px 9px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--muted);
+      font-size: 11px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .pill-button span.emoji {
+      font-size: 13px;
+    }
+
+    .pill-button.primary {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      border-color: var(--accent-strong);
+    }
+
+    .pill-button.danger {
+      background: rgba(239, 68, 68, 0.15);
+      color: #fecaca;
+      border-color: rgba(239, 68, 68, 0.7);
+    }
+/* Heading marker (your car) */
+.heading-marker {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: rgba(34, 197, 94, 0.16);
+  border: 2px solid #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.6);
+}
+
+.heading-marker-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 11px solid #22c55e;
+  transform-origin: 50% 80%;
+  transform: rotate(0deg);
+}
+
+    /* Sections inside panel */
+    .panel-section {
+      border-radius: 12px;
+      padding: 8px 9px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+
+    .section-title span.emoji {
+      font-size: 14px;
+    }
+
+    .section-toggle-icon {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .section-body {
+      margin-top: 4px;
+      display: grid;
+      gap: 6px;
+    }
+
+    .section-body.collapsed {
+      display: none;
+    }
+
+    /* Inputs */
+    input[type="text"],
+    select,
+    textarea {
+      width: 100%;
+      border-radius: 8px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      padding: 6px 8px;
+      font-size: 13px;
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    /* Small buttons */
+    .btn {
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      padding: 5px 9px;
+      font-size: 11px;
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      border-color: var(--accent-strong);
+    }
+
+    .btn.full {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .btn.small {
+      font-size: 10px;
+      padding: 3px 7px;
+    }
+
+    .btn-icon {
+      font-size: 13px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+      gap: 6px;
+    }
+
+    .inline-label {
+      font-size: 11px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      accent-color: var(--accent);
+    }
+
+    .small-text {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* Trip modal */
+    #trip-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    #trip-modal {
+      width: min(460px, calc(100% - 32px));
+      max-height: calc(100% - 80px);
+      background: #020617;
+      border-radius: 16px;
+      padding: 12px 14px 14px;
+      border: 1px solid rgba(148, 163, 184, 0.65);
+      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.95);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #trip-modal-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    #trip-modal-title span.left {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    #trip-modal-list {
+      flex: 1;
+      overflow-y: auto;
+      border-radius: 10px;
+      padding: 6px 6px 4px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(51, 65, 85, 0.8);
+      font-size: 12px;
+    }
+
+    .trip-item-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 4px;
+      border-radius: 8px;
+      margin-bottom: 3px;
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    .trip-item-row:nth-child(odd) {
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .trip-item-name {
+      font-size: 12px;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .trip-item-order {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .trip-item-order button {
+      padding: 1px 6px;
+      font-size: 11px;
+      border-radius: 9px;
+      border: 1px solid rgba(148, 163, 184, 0.6);
+      background: rgba(15, 23, 42, 0.9);
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    #trip-modal-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    #trip-modal-footer .btn {
+      flex: 1;
+    }
+
+    /* Import file input */
+    #file-input {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+ /* Collapsible, compact legend / layers chip */
+
+#layer-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* Toggle button (always visible) */
+#legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+  color: #111827;
+  cursor: pointer;
+}
+
+#legend-toggle:active {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25) inset;
+}
+
+#legend-toggle-label {
+  font-weight: 500;
+}
+
+#legend-toggle-icon {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+/* Inner content (only when expanded) */
+#legend-inner {
+  margin-top: 0.35rem;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 10px;
+  padding: 0.4rem 0.5rem;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.22);
+  font-size: 0.7rem;
+  min-width: 180px;
+}
+
+/* Collapsed state: hide inner */
+#layer-legend.collapsed #legend-inner {
+  display: none;
+}
+
+/* Expanded state: toggle icon direction */
+#layer-legend.collapsed #legend-toggle-icon {
+  transform: rotate(180deg);
+}
+
+/* Legend internals */
+.legend-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.legend-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.2rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.legend-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+}
+
+/* Match your existing colours */
+.legend-swatch.day {
+  background: #2563eb; /* blue – day program / centre */
+}
+
+.legend-swatch.medical {
+  background: #16a34a; /* green – medical / allied health */
+}
+
+.legend-swatch.social {
+  background: #f97316; /* orange – social / activities */
+}
+
+.legend-text {
+  white-space: nowrap;
+}
+
+/* Slightly bigger touch targets on small screens */
+@media (max-width: 768px) {
+  #legend-toggle {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+  }
+  #legend-inner {
+    font-size: 0.75rem;
+  }
+}
+
+
+
+    /* Mobile tweaks */
+    @media (max-width: 768px) {
+      #control-panel {
+        padding: 8px 10px 12px;
+      }
+      #panel-title {
+        font-size: 12px;
+      }
+      .panel-section {
+        padding: 7px 8px;
+      }
+      .two-col {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+      }
+      #fab-locate {
+        bottom: 155px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- App header chip -->
+  <div id="app-header">
+    <div id="app-header-logo">😊</div>
+    <div id="app-header-title">OSM Route Planner</div>
+  </div>
+    
+  
+  <!-- Navigation HUD -->
+  <div id="nav-hud">No route active yet.</div>
+
+  <!-- Map -->
+  <div id="map"></div>
+<div id="layer-legend" class="collapsed">
+  <button id="legend-toggle" type="button">
+    <span id="legend-toggle-label">Layers</span>
+    <span id="legend-toggle-icon">▲</span>
+  </button>
+
+  <div id="legend-inner">
+    <div class="legend-section">
+      <div class="legend-title">Layers</div>
+
+      <label class="legend-item">
+        <input type="checkbox" data-layer="centres-day" checked />
+        <span class="legend-swatch day"></span>
+        <span class="legend-text">Day programs / centres</span>
+      </label>
+
+      <label class="legend-item">
+        <input type="checkbox" data-layer="centres-medical" checked />
+        <span class="legend-swatch medical"></span>
+        <span class="legend-text">Medical / allied health</span>
+      </label>
+
+      <label class="legend-item">
+        <input type="checkbox" data-layer="centres-social" checked />
+        <span class="legend-swatch social"></span>
+        <span class="legend-text">Social / activities</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+
+  <!-- Floating locate button -->
+  <button id="fab-locate" title="Locate me">
+    ⬤
+  </button>
+
+  <!-- Floating panel toggle -->
+  <button id="fab-panel" title="Show controls">
+    <span>☰</span>
+  </button>
+
+  <!-- Bottom control panel -->
+  <div id="control-panel">
+    <div id="panel-top-row">
+  <div id="panel-title">Trip & map controls</div>
+  <div id="panel-actions">
+    <button id="btn-follow-toggle" class="pill-button" type="button">
+      <span class="emoji">📡</span>
+      <span id="btn-follow-label">Follow map: ON</span>
+    </button>
+    <button id="btn-start-nav" class="pill-button primary" type="button">
+      <span class="emoji">▶️</span> Start nav
+    </button>
+    <button id="btn-stop-nav" class="pill-button danger" type="button">
+      <span class="emoji">⏹</span> Stop
+    </button>
+  </div>
+</div>
+
+
+    <div id="info-text">
+      Tap the map or search to add stops. Build a trip, then start navigation.
+    </div>
+
+    <!-- SEARCH + FAVOURITES -->
+    <div class="panel-section">
+      <div class="section-header" data-section="search">
+        <div class="section-title">
+          <span class="emoji">🔍</span>
+          <span>Search & favourites</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="search">
+        <div class="two-col">
+          <div>
+            <label class="inline-label" for="search-input">Search for a place</label>
+            <input
+              id="search-input"
+              type="text"
+              placeholder="e.g. 46 Strathcona Ave Clapham SA"
+              autocomplete="off"
+            />
+          </div>
+          <div class="btn-row" style="align-self:flex-end; justify-content:flex-end;">
+            <button id="search-btn" class="btn primary" type="button">
+              <span class="btn-icon">🔎</span>
+              Search
+            </button>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button id="add-search-waypoint-btn" class="btn small" type="button">
+            <span class="btn-icon">➕</span> Add as waypoint
+          </button>
+          <button id="save-favourite-btn" class="btn small" type="button">
+            <span class="btn-icon">⭐</span> Save as favourite
+          </button>
+          <button id="locate-btn" class="btn small" type="button">
+            <span class="btn-icon">📍</span> Use my location
+          </button>
+        </div>
+
+        <div class="two-col">
+          <div>
+            <label class="inline-label" for="fav-folder-select">Folder</label>
+            <div class="btn-row">
+              <select id="fav-folder-select"></select>
+              <button id="fav-new-folder-btn" class="btn small" type="button">
+                <span class="btn-icon">📂</span> New
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="inline-label" for="favourites-select">Favourites</label>
+            <select id="favourites-select">
+              <option value="">(none yet)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="btn-row">
+            <button id="fav-go-btn" class="btn small" type="button">
+              <span class="btn-icon">🎯</span> Go to favourite
+            </button>
+            <button id="fav-add-waypoint-btn" class="btn small" type="button">
+              <span class="btn-icon">🧭</span> Add fav as waypoint
+            </button>
+          </div>
+          <div>
+            <label class="inline-label" for="fav-target-folder-select">Copy to folder</label>
+            <div class="btn-row">
+              <select id="fav-target-folder-select"></select>
+              <button id="fav-copy-to-folder-btn" class="btn small" type="button">
+                <span class="btn-icon">➕</span> Add
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUTE -->
+    <div class="panel-section">
+      <div class="section-header" data-section="route">
+        <div class="section-title">
+          <span class="emoji">🗺️</span>
+          <span>Route & waypoints</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="route">
+        <div class="checkbox-row">
+          <input type="checkbox" id="route-mode-checkbox" />
+          <label for="route-mode-checkbox">Route mode (tap map to add waypoints)</label>
+        </div>
+        <div class="btn-row">
+          <button id="clear-route-btn" class="btn small danger" type="button">
+            <span class="btn-icon">🧹</span> Clear route
+          </button>
+        </div>
+        <div class="small-text">
+          In route mode, each tap adds a stop. Otherwise, taps just move a single marker.
+        </div>
+      </div>
+    </div>
+
+    <!-- TRIP -->
+    <div class="panel-section">
+      <div class="section-header" data-section="trip">
+        <div class="section-title">
+          <span class="emoji">🚐</span>
+          <span>Trip builder</span>
+        </div>
+        <div id="nav-row">
+  <label>
+    <input type="checkbox" id="nav-mode-checkbox" />
+    Nav mode (follow & rotate)
+  </label>
+</div>
+
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="trip">
+        <div class="small-text">
+          Build a trip from favourites in the current folder. Choose stops and order them, then apply as a route.
+        </div>
+        <div class="btn-row">
+          <button id="trip-open-btn" class="btn primary full" type="button">
+            <span class="btn-icon">🧩</span> Plan trip from this folder
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="panel-section">
+      <div class="section-header" data-section="notes">
+        <div class="section-title">
+          <span class="emoji">📝</span>
+          <span>Trip notes</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="notes">
+        <textarea
+          id="notes-textarea"
+          placeholder="Write notes about this run, participants, timing, reminders, etc."
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- IMPORT -->
+    <div class="panel-section">
+      <div class="section-header" data-section="import">
+        <div class="section-title">
+          <span class="emoji">📁</span>
+          <span>Import routes</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="import">
+        <div class="small-text">
+          Import KML, KMZ, GPX, or GeoJSON files to show saved routes and points.
+        </div>
+        <label for="file-input" class="inline-label">Select files to import</label>
+        <input
+          id="file-input"
+          type="file"
+          multiple
+          accept=".kml,.kmz,.gpx,.geojson,.json"
+          title="Select KML, KMZ, GPX, or GeoJSON files"
+        />
+        <div class="btn-row">
+          <button id="clear-imports-btn" class="btn small" type="button">
+            <span class="btn-icon">🗑</span> Clear imported layers
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trip modal -->
+  <div id="trip-modal-backdrop">
+    <div id="trip-modal">
+      <div id="trip-modal-title">
+        <span class="left">
+          <span>🚐</span>
+          <span>Plan trip from folder</span>
+        </span>
+        <button id="trip-close-btn" class="btn small" type="button">✕</button>
+      </div>
+      <div class="small-text">
+        Tick the stops you want, change their order, then apply to build the route.
+      </div>
+      <div id="trip-modal-list"></div>
+      <div id="trip-modal-footer">
+        <button id="trip-cancel-btn" class="btn" type="button">Cancel</button>
+        <button id="trip-apply-btn" class="btn primary" type="button">
+          Apply trip to map
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <!-- JSZip (for KMZ unzip) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- toGeoJSON (for KML/GPX -> GeoJSON) -->
+  <script src="https://unpkg.com/@tmcw/togeojson/dist/togeojson.umd.js"></script>
+
+  <script>
+    // ------------ Basic UI wiring (panel + sections) ------------
+    const controlPanel = document.getElementById('control-panel');
+    const panelToggleBtn = document.getElementById('fab-panel');
+    const locateFab = document.getElementById('fab-locate');
+    const infoText = document.getElementById('info-text');
+    const navHud = document.getElementById('nav-hud');
+const notesTextarea = document.getElementById('notes-textarea');
+
+    panelToggleBtn.addEventListener('click', () => {
+      const isOpen = controlPanel.classList.toggle('open');
+      panelToggleBtn.querySelector('span').textContent = isOpen ? '▾' : '☰';
+      panelToggleBtn.title = isOpen ? 'Hide controls' : 'Show controls';
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 250);
+    });
+
+    // Section collapse/expand
+    document.querySelectorAll('.section-header').forEach((header) => {
+      header.addEventListener('click', () => {
+        const section = header.getAttribute('data-section');
+        const body = document.querySelector(
+          `.section-body[data-section-body="${section}"]`
+        );
+        if (!body) return;
+        const icon = header.querySelector('.section-toggle-icon');
+        const collapsed = body.classList.toggle('collapsed');
+        if (icon) icon.textContent = collapsed ? '▸' : '▾';
+      });
+    });
+
+    // Default: collapse import section and notes slightly, keep search open
+    ['import'].forEach((sec) => {
+      const body = document.querySelector(
+        `.section-body[data-section-body="${sec}"]`
+      );
+      const header = document.querySelector(
+        `.section-header[data-section="${sec}"] .section-toggle-icon`
+      );
+      if (body && header) {
+        body.classList.add('collapsed');
+        header.textContent = '▸';
+      }
+    });
+// ---- Persist trip notes in localStorage ----
+const NOTES_KEY = 'osmRouteNotes';
+
+function loadNotes() {
+  try {
+    const saved = localStorage.getItem(NOTES_KEY);
+    if (saved !== null) {
+      notesTextarea.value = saved;
+    }
+  } catch (e) {
+    console.error('Error loading notes', e);
+  }
+}
+
+function restoreRouteFromStorage() {
+  let savedPoints = null;
+  let savedSummary = null;
+  try {
+    const pointsRaw = localStorage.getItem(ROUTE_KEY);
+    if (pointsRaw) {
+      savedPoints = JSON.parse(pointsRaw);
+    }
+    const summaryRaw = localStorage.getItem(ROUTE_SUMMARY_KEY);
+    if (summaryRaw) {
+      savedSummary = JSON.parse(summaryRaw);
+    }
+  } catch (e) {
+    console.error('Error restoring route from storage', e);
+  }
+
+  if (!Array.isArray(savedPoints) || !savedPoints.length) {
+    navHud.textContent = 'No route active yet.';
+    return;
+  }
+
+  // Recreate markers and polyline
+  routePoints = [];
+  routeMarkers.forEach((m) => map.removeLayer(m));
+  routeMarkers = [];
+  if (roadRoutePolyline) {
+    map.removeLayer(roadRoutePolyline);
+    roadRoutePolyline = null;
+  }
+
+  savedPoints.forEach(([lat, lng]) => {
+    routePoints.push([lat, lng]);
+    const marker = L.circleMarker([lat, lng], { radius: 5 }).addTo(map);
+    routeMarkers.push(marker);
+  });
+
+  // Call OSRM to rebuild the route line / summary
+  updateRoadRoute().catch((err) => console.error(err));
+
+  if (savedSummary && typeof savedSummary.distanceKm === 'number') {
+    lastRouteSummary = savedSummary;
+    navHud.textContent =
+      `Route: ${savedSummary.distanceKm.toFixed(1)} km, ~${savedSummary.durationMin.toFixed(0)} min.`;
+  } else {
+    navHud.textContent = 'Route restored. Distance will be recalculated.';
+  }
+}
+
+function saveNotes() {
+  try {
+    localStorage.setItem(NOTES_KEY, notesTextarea.value);
+  } catch (e) {
+    console.error('Error saving notes', e);
+  }
+}
+
+notesTextarea.addEventListener('input', () => {
+  // Save on every change; they’re small
+  saveNotes();
+});
+
+loadNotes();
+
+    // ------------ Map + core logic (adapted from previous versions) ------------
+    const map = L.map('map').setView([-34.9285, 138.6007], 12);
+// --- Example centres/activities GeoJSON (Adelaide-ish demo data) ---
+const exampleCentresGeoJSON = {
+  type: "FeatureCollection",
+  features: [
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [138.6007, -34.9285] // Adelaide CBD
+      },
+      properties: {
+        name: "Central Day Program",
+        address: "Adelaide CBD",
+        type: "day"
+      }
+    },
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [138.568, -34.978] // Clapham area
+      },
+      properties: {
+        name: "Clapham Support Centre",
+        address: "Near Clapham SA",
+        type: "day"
+      }
+    },
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [138.530, -34.930] // Western suburbs
+      },
+      properties: {
+        name: "Western Allied Health Clinic",
+        address: "Western suburbs",
+        type: "medical"
+      }
+    },
+    {
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [138.650, -34.950] // Eastern suburbs
+      },
+      properties: {
+        name: "Eastern Recreation Group",
+        address: "Eastern suburbs",
+        type: "social"
+      }
+    }
+  ]
+};
+
+
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const adelaideMarker = L.marker([-34.9285, 138.6007]).addTo(map);
+    adelaideMarker.bindPopup('<b>Hello Ben!</b><br>This is Adelaide on OSM.');
+
+    let clickMarker = null;
+    let userLocationMarker = null;
+
+    // ------------ Locate Me – hook both main button + small button ------------
+    const locateBtn = document.getElementById('locate-btn');
+
+    function performLocate() {
+      if (!navigator.geolocation) {
+        infoText.textContent = 'Geolocation is not supported by this browser.';
+        return;
+      }
+
+      infoText.textContent = 'Finding your location...';
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          infoText.textContent =
+            `Your position: latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}`;
+
+          map.setView([lat, lng], 15);
+
+          if (!userLocationMarker) {
+            userLocationMarker = L.marker([lat, lng]).addTo(map);
+          } else {
+            userLocationMarker.setLatLng([lat, lng]);
+          }
+
+          userLocationMarker.bindPopup('<b>You are here</b>').openPopup();
+        },
+        (error) => {
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              infoText.textContent = 'Location access was denied.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              infoText.textContent = 'Location information is unavailable.';
+              break;
+            case error.TIMEOUT:
+              infoText.textContent = 'Location request timed out.';
+              break;
+            default:
+              infoText.textContent =
+                'An unknown error occurred retrieving location.';
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    locateBtn.addEventListener('click', performLocate);
+    locateFab.addEventListener('click', performLocate);
+
+
+    // ------------ Search using Nominatim ------------
+    const searchInput = document.getElementById('search-input');
+    const searchBtn = document.getElementById('search-btn');
+    const addSearchWaypointBtn = document.getElementById(
+      'add-search-waypoint-btn'
+    );
+    const saveFavouriteBtn = document.getElementById('save-favourite-btn');
+
+    let searchMarker = null;
+    let lastSearchLatLng = null;
+    let lastSearchLabel = null;
+
+    async function doSearch() {
+      const query = searchInput.value.trim();
+      if (!query) {
+        infoText.textContent = 'Please enter an address or place to search.';
+        return;
+      }
+
+      infoText.textContent = `Searching for "${query}"...`;
+
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+          query
+        )}&addressdetails=1&limit=1`;
+
+        const response = await fetch(url, {
+          headers: {
+            'Accept-Language': 'en'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const results = await response.json();
+
+        if (!results || results.length === 0) {
+          infoText.textContent = `No results found for "${query}".`;
+          lastSearchLatLng = null;
+          lastSearchLabel = null;
+          return;
+        }
+
+        const place = results[0];
+        const lat = parseFloat(place.lat);
+        const lng = parseFloat(place.lon);
+
+        lastSearchLatLng = [lat, lng];
+        lastSearchLabel = place.display_name;
+
+        infoText.textContent = `Found: ${place.display_name}`;
+        map.setView([lat, lng], 16);
+
+        if (!searchMarker) {
+          searchMarker = L.marker([lat, lng]).addTo(map);
+        } else {
+          searchMarker.setLatLng([lat, lng]);
+        }
+
+        searchMarker
+          .bindPopup(
+            `<b>Search result</b><br>${place.display_name}<br>Lat: ${lat.toFixed(
+              5
+            )}, Lon: ${lng.toFixed(5)}`
+          )
+          .openPopup();
+      } catch (err) {
+        console.error(err);
+        infoText.textContent =
+          'Error performing search. Please check your connection or try again.';
+        lastSearchLatLng = null;
+        lastSearchLabel = null;
+      }
+    }
+
+    searchBtn.addEventListener('click', doSearch);
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        doSearch();
+      }
+    });
+
+    // ------------ Route building with OSRM ------------
+    const routeModeCheckbox = document.getElementById('route-mode-checkbox');
+    const clearRouteBtn = document.getElementById('clear-route-btn');
+
+    let routeMode = false;
+    const ROUTE_KEY = 'osmRouteLastRoute';
+const ROUTE_SUMMARY_KEY = 'osmRouteLastRouteSummary';
+
+function saveRouteToStorage() {
+  try {
+    localStorage.setItem(ROUTE_KEY, JSON.stringify(routePoints));
+    if (lastRouteSummary) {
+      localStorage.setItem(ROUTE_SUMMARY_KEY, JSON.stringify(lastRouteSummary));
+    } else {
+      localStorage.removeItem(ROUTE_SUMMARY_KEY);
+    }
+  } catch (e) {
+    console.error('Error saving route', e);
+  }
+}
+
+    let routePoints = [];
+    let routeMarkers = [];
+    let roadRoutePolyline = null;
+
+    let lastRouteSummary = null;
+
+    routeModeCheckbox.addEventListener('change', (e) => {
+      routeMode = e.target.checked;
+      if (routeMode) {
+        infoText.textContent =
+          'Route mode ON: tap the map to add waypoints in order.';
+      } else {
+        infoText.textContent =
+          'Route mode OFF: taps move a single marker instead.';
+      }
+    });
+
+    function clearRouteOnly() {
+  routePoints = [];
+  if (roadRoutePolyline) {
+    map.removeLayer(roadRoutePolyline);
+    roadRoutePolyline = null;
+  }
+  routeMarkers.forEach((m) => map.removeLayer(m));
+  routeMarkers = [];
+  lastRouteSummary = null;
+  navHud.textContent = 'No route active.';
+
+  try {
+    localStorage.removeItem(ROUTE_KEY);
+    localStorage.removeItem(ROUTE_SUMMARY_KEY);
+  } catch (e) {
+    console.error('Error clearing route from storage', e);
+  }
+}
+
+
+    clearRouteBtn.addEventListener('click', () => {
+      clearRouteOnly();
+      infoText.textContent = 'Route cleared.';
+    });
+
+    async function updateRoadRoute() {
+      if (routePoints.length < 2) {
+        if (roadRoutePolyline) {
+          map.removeLayer(roadRoutePolyline);
+          roadRoutePolyline = null;
+        }
+        lastRouteSummary = null;
+        navHud.textContent = 'Need at least 2 stops for a route.';
+        return;
+      }
+
+      try {
+        const coordString = routePoints
+          .map(([lat, lng]) => `${lng},${lat}`)
+          .join(';');
+
+        const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('OSRM request failed');
+        }
+
+        const data = await response.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) {
+          infoText.textContent = 'No road route found between these points.';
+          return;
+        }
+
+        const route = data.routes[0];
+        const distanceKm = route.distance / 1000;
+        const durationMin = route.duration / 60;
+
+        const coords = route.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+
+        if (!roadRoutePolyline) {
+          roadRoutePolyline = L.polyline(coords, { weight: 5 }).addTo(map);
+        } else {
+          roadRoutePolyline.setLatLngs(coords);
+        }
+
+        lastRouteSummary = { distanceKm, durationMin };
+
+// Save route + summary
+saveRouteToStorage();
+
+infoText.textContent =
+  `Route points: ${routePoints.length}. Distance: ` +
+  `${distanceKm.toFixed(2)} km, duration ~ ${durationMin.toFixed(1)} min.`;
+
+navHud.textContent =
+  `Route: ${distanceKm.toFixed(1)} km, ~${durationMin.toFixed(0)} min.`;
+
+      } catch (err) {
+        console.error(err);
+        infoText.textContent = 'Error fetching road route. Try again later.';
+        navHud.textContent = 'Error: route service unavailable.';
+      }
+    }
+
+    function addWaypoint(lat, lng, sourceLabel) {
+      routePoints.push([lat, lng]);
+
+      const waypointMarker = L.circleMarker([lat, lng], {
+        radius: 5
+      }).addTo(map);
+      routeMarkers.push(waypointMarker);
+
+      const label = sourceLabel ? ` (${sourceLabel})` : '';
+
+      updateRoadRoute().catch((err) => console.error(err));
+
+      infoText.textContent =
+        `Route points: ${routePoints.length}${label}. Last point at ` +
+        `lat ${lat.toFixed(5)}, lon ${lng.toFixed(5)}.`;
+    }
+
+    map.on('click', function (e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+
+      if (routeMode) {
+        addWaypoint(lat, lng, 'map tap');
+      } else {
+        infoText.textContent =
+          `Last tap: latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}`;
+
+        if (!clickMarker) {
+          clickMarker = L.marker(e.latlng).addTo(map);
+        } else {
+          clickMarker.setLatLng(e.latlng);
+        }
+
+        clickMarker
+          .bindPopup(
+            `<b>Tapped location</b><br>Lat: ${lat.toFixed(
+              5
+            )}<br>Lng: ${lng.toFixed(5)}`
+          )
+          .openPopup();
+      }
+    });
+
+    // Add last search result as waypoint
+    addSearchWaypointBtn.addEventListener('click', () => {
+      if (!lastSearchLatLng) {
+        infoText.textContent =
+          'There is no recent search result to add as a waypoint.';
+        return;
+      }
+
+      const [lat, lng] = lastSearchLatLng;
+      addWaypoint(lat, lng, 'search result');
+      // ---- Restore last route from localStorage (if any) ----
+
+
+    });
+
+    // ------------ Folders + favourites in localStorage ------------
+    const favFolderSelect = document.getElementById('fav-folder-select');
+    const favTargetFolderSelect = document.getElementById(
+      'fav-target-folder-select'
+    );
+    const favNewFolderBtn = document.getElementById('fav-new-folder-btn');
+    const favouritesSelect = document.getElementById('favourites-select');
+    const favGoBtn = document.getElementById('fav-go-btn');
+    const favAddWaypointBtn = document.getElementById('fav-add-waypoint-btn');
+    const favCopyToFolderBtn = document.getElementById('fav-copy-to-folder-btn');
+
+    let favouriteFolders = [];
+    let currentFolderIndex = 0;
+
+    function defaultFolders() {
+      favouriteFolders = [
+        {
+          name: 'Default',
+          items: []
+        }
+      ];
+      currentFolderIndex = 0;
+    }
+
+    function loadFavourites() {
+      try {
+        const raw = localStorage.getItem('osmRouteFavourites');
+        if (!raw) {
+          defaultFolders();
+          refreshFolderSelect();
+          refreshTargetFolderSelect();
+          refreshFavouritesSelect();
+          return;
+        }
+
+        const parsed = JSON.parse(raw);
+
+        if (Array.isArray(parsed)) {
+          if (
+            parsed.length > 0 &&
+            parsed[0] &&
+            typeof parsed[0] === 'object' &&
+            'items' in parsed[0]
+          ) {
+            favouriteFolders = parsed;
+          } else {
+            favouriteFolders = [
+              {
+                name: 'Default',
+                items: parsed
+              }
+            ];
+          }
+        } else {
+          defaultFolders();
+        }
+      } catch (e) {
+        console.error('Error loading favourites:', e);
+        defaultFolders();
+      }
+
+      currentFolderIndex = 0;
+      refreshFolderSelect();
+      refreshTargetFolderSelect();
+      refreshFavouritesSelect();
+    }
+
+    function saveFavourites() {
+      try {
+        localStorage.setItem('osmRouteFavourites', JSON.stringify(favouriteFolders));
+      } catch (e) {
+        console.error('Error saving favourites:', e);
+      }
+    }
+
+    function truncateLabel(label, max = 60) {
+      return label.length > max ? label.slice(0, max - 3) + '...' : label;
+    }
+
+    function getCurrentFolder() {
+      if (
+        currentFolderIndex < 0 ||
+        currentFolderIndex >= favouriteFolders.length
+      ) {
+        currentFolderIndex = 0;
+      }
+      return favouriteFolders[currentFolderIndex];
+    }
+
+    function refreshFolderSelect() {
+      favFolderSelect.innerHTML = '';
+      favouriteFolders.forEach((folder, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = folder.name;
+        favFolderSelect.appendChild(opt);
+      });
+      favFolderSelect.value = String(currentFolderIndex);
+    }
+
+    function refreshTargetFolderSelect() {
+      favTargetFolderSelect.innerHTML = '';
+      favouriteFolders.forEach((folder, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = folder.name;
+        favTargetFolderSelect.appendChild(opt);
+      });
+      favTargetFolderSelect.value = String(currentFolderIndex);
+    }
+
+    function refreshFavouritesSelect() {
+      favouritesSelect.innerHTML = '';
+      const folder = getCurrentFolder();
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = folder.items.length
+        ? '(select a favourite)'
+        : '(no favourites in this folder)';
+      favouritesSelect.appendChild(placeholder);
+
+      folder.items.forEach((fav, index) => {
+        const opt = document.createElement('option');
+        opt.value = String(index);
+        opt.textContent = truncateLabel(fav.name);
+        favouritesSelect.appendChild(opt);
+      });
+    }
+
+    favNewFolderBtn.addEventListener('click', () => {
+      const name = (prompt('New folder name:') || '').trim();
+      if (!name) return;
+
+      const exists = favouriteFolders.some(
+        (folder) => folder.name.toLowerCase() === name.toLowerCase()
+      );
+      if (exists) {
+        infoText.textContent = 'A folder with that name already exists.';
+        return;
+      }
+
+      favouriteFolders.push({ name, items: [] });
+      currentFolderIndex = favouriteFolders.length - 1;
+      saveFavourites();
+      refreshFolderSelect();
+      refreshTargetFolderSelect();
+      refreshFavouritesSelect();
+
+      infoText.textContent = `Folder "${name}" created.`;
+    });
+
+    favFolderSelect.addEventListener('change', (e) => {
+      const idx = Number(e.target.value);
+      if (!Number.isNaN(idx)) {
+        currentFolderIndex = idx;
+      } else {
+        currentFolderIndex = 0;
+      }
+      refreshFavouritesSelect();
+      refreshTargetFolderSelect();
+    });
+
+    saveFavouriteBtn.addEventListener('click', () => {
+      if (!lastSearchLatLng || !lastSearchLabel) {
+        infoText.textContent =
+          'Search for a location first, then you can save it as a favourite.';
+        return;
+      }
+
+      const folder = getCurrentFolder();
+      const [lat, lng] = lastSearchLatLng;
+      const name = lastSearchLabel;
+
+      const exists = folder.items.some(
+        (fav) => fav.lat === lat && fav.lng === lng
+      );
+      if (exists) {
+        infoText.textContent =
+          'This location is already in your favourites for this folder.';
+        return;
+      }
+
+      folder.items.push({ name, lat, lng });
+      saveFavourites();
+      refreshFavouritesSelect();
+
+      infoText.textContent = `Favourite saved in folder "${folder.name}".`;
+    });
+
+    favGoBtn.addEventListener('click', () => {
+      const folder = getCurrentFolder();
+      const idx = favouritesSelect.value;
+      if (idx === '') {
+        infoText.textContent = 'Please select a favourite first.';
+        return;
+      }
+
+      const fav = folder.items[Number(idx)];
+      const { lat, lng, name } = fav;
+
+      map.setView([lat, lng], 16);
+
+      lastSearchLatLng = [lat, lng];
+      lastSearchLabel = name;
+
+      if (!searchMarker) {
+        searchMarker = L.marker([lat, lng]).addTo(map);
+      } else {
+        searchMarker.setLatLng([lat, lng]);
+      }
+
+      searchMarker
+        .bindPopup(
+          `<b>Favourite</b><br>${name}<br>Lat: ${lat.toFixed(
+            5
+          )}, Lon: ${lng.toFixed(5)}`
+        )
+        .openPopup();
+
+      infoText.textContent = `Moved to favourite: ${name}`;
+    });
+
+    favAddWaypointBtn.addEventListener('click', () => {
+      const folder = getCurrentFolder();
+      const idx = favouritesSelect.value;
+      if (idx === '') {
+        infoText.textContent = 'Please select a favourite first.';
+        return;
+      }
+
+      const fav = folder.items[Number(idx)];
+      addWaypoint(fav.lat, fav.lng, `favourite in "${folder.name}"`);
+    });
+
+    favCopyToFolderBtn.addEventListener('click', () => {
+      const sourceFolder = getCurrentFolder();
+      const favIdx = favouritesSelect.value;
+      if (favIdx === '') {
+        infoText.textContent =
+          'Please select a favourite to add to another folder.';
+        return;
+      }
+
+      const targetIdx = Number(favTargetFolderSelect.value);
+      if (
+        Number.isNaN(targetIdx) ||
+        targetIdx < 0 ||
+        targetIdx >= favouriteFolders.length
+      ) {
+        infoText.textContent = 'Please select a valid destination folder.';
+        return;
+      }
+
+      const targetFolder = favouriteFolders[targetIdx];
+      const fav = sourceFolder.items[Number(favIdx)];
+      if (!fav) {
+        infoText.textContent = 'Could not find the selected favourite.';
+        return;
+      }
+
+      const exists = targetFolder.items.some(
+        (item) => item.lat === fav.lat && item.lng === fav.lng
+      );
+      if (exists) {
+        infoText.textContent =
+          `That favourite already exists in folder "${targetFolder.name}".`;
+        return;
+      }
+
+      targetFolder.items.push({ name: fav.name, lat: fav.lat, lng: fav.lng });
+      saveFavourites();
+
+      if (targetIdx === currentFolderIndex) {
+        refreshFavouritesSelect();
+      }
+
+      infoText.textContent =
+        `Favourite added to folder "${targetFolder.name}".`;
+    });
+
+    loadFavourites();
+
+    // ------------ Trip planner modal ------------
+    const tripModalBackdrop = document.getElementById('trip-modal-backdrop');
+    const tripModalList = document.getElementById('trip-modal-list');
+    const tripOpenBtn = document.getElementById('trip-open-btn');
+    const tripCloseBtn = document.getElementById('trip-close-btn');
+    const tripCancelBtn = document.getElementById('trip-cancel-btn');
+    const tripApplyBtn = document.getElementById('trip-apply-btn');
+
+    function openTripModal() {
+      const folder = getCurrentFolder();
+      if (!folder.items.length) {
+        infoText.textContent =
+          'No favourites in this folder to build a trip from.';
+        return;
+      }
+
+      tripModalList.innerHTML = '';
+      folder.items.forEach((fav, index) => {
+        const row = document.createElement('div');
+        row.className = 'trip-item-row';
+        row.dataset.index = String(index);
+
+        const checkboxCell = document.createElement('div');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        checkbox.dataset.index = String(index);
+        checkboxCell.appendChild(checkbox);
+
+        const nameCell = document.createElement('div');
+        nameCell.className = 'trip-item-name';
+        nameCell.textContent = truncateLabel(fav.name, 80);
+
+        const orderCell = document.createElement('div');
+        orderCell.className = 'trip-item-order';
+        const upBtn = document.createElement('button');
+        upBtn.textContent = '▲';
+        upBtn.dataset.dir = 'up';
+        upBtn.dataset.index = String(index);
+        const downBtn = document.createElement('button');
+        downBtn.textContent = '▼';
+        downBtn.dataset.dir = 'down';
+        downBtn.dataset.index = String(index);
+        orderCell.appendChild(upBtn);
+        orderCell.appendChild(downBtn);
+
+        row.appendChild(checkboxCell);
+        row.appendChild(nameCell);
+        row.appendChild(orderCell);
+        tripModalList.appendChild(row);
+      });
+
+      tripModalBackdrop.style.display = 'flex';
+    }
+
+    function closeTripModal() {
+      tripModalBackdrop.style.display = 'none';
+    }
+
+    tripOpenBtn.addEventListener('click', openTripModal);
+    tripCloseBtn.addEventListener('click', closeTripModal);
+    tripCancelBtn.addEventListener('click', closeTripModal);
+
+    tripModalList.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const dir = target.dataset.dir;
+      if (!dir) return;
+
+      const index = Number(target.dataset.index);
+      if (Number.isNaN(index)) return;
+
+      const rows = Array.from(
+        tripModalList.querySelectorAll('.trip-item-row')
+      );
+      const rowIndex = rows.findIndex(
+        (r) => Number(r.dataset.index) === index
+      );
+      if (rowIndex === -1) return;
+
+      if (dir === 'up' && rowIndex > 0) {
+        tripModalList.insertBefore(rows[rowIndex], rows[rowIndex - 1]);
+      } else if (dir === 'down' && rowIndex < rows.length - 1) {
+        tripModalList.insertBefore(rows[rowIndex + 1], rows[rowIndex]);
+      }
+    });
+
+    tripApplyBtn.addEventListener('click', () => {
+      const folder = getCurrentFolder();
+      const rows = Array.from(
+        tripModalList.querySelectorAll('.trip-item-row')
+      );
+
+      const selected = [];
+      for (const row of rows) {
+        const idx = Number(row.dataset.index);
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (!checkbox || !checkbox.checked) continue;
+        const fav = folder.items[idx];
+        if (fav) selected.push(fav);
+      }
+
+      if (selected.length < 2) {
+        infoText.textContent =
+          'Select at least two stops to build a trip.';
+        return;
+      }
+
+      clearRouteOnly();
+
+      selected.forEach((fav) => {
+        addWaypoint(fav.lat, fav.lng, `trip from "${folder.name}"`);
+      });
+
+      infoText.textContent =
+        `Trip created with ${selected.length} stops from "${folder.name}".`;
+      closeTripModal();
+    });
+
+    // ------------ Import KML / KMZ / GPX / GeoJSON ------------
+    const fileInput = document.getElementById('file-input');
+    const clearImportsBtn = document.getElementById('clear-imports-btn');
+    let importedLayers = [];
+
+    fileInput.addEventListener('change', async (event) => {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+
+      let overallBounds = null;
+
+      for (const file of files) {
+        const name = file.name;
+        const lower = name.toLowerCase();
+        try {
+          let geojson = null;
+
+          if (lower.endsWith('.geojson') || lower.endsWith('.json')) {
+            const text = await file.text();
+            geojson = JSON.parse(text);
+          } else if (lower.endsWith('.kml')) {
+            const text = await file.text();
+            const dom = new DOMParser().parseFromString(text, 'text/xml');
+            geojson = toGeoJSON.kml(dom);
+          } else if (lower.endsWith('.gpx')) {
+            const text = await file.text();
+            const dom = new DOMParser().parseFromString(text, 'text/xml');
+            geojson = toGeoJSON.gpx(dom);
+          } else if (lower.endsWith('.kmz')) {
+            const arrayBuf = await file.arrayBuffer();
+            const zip = await JSZip.loadAsync(arrayBuf);
+            let kmlFile = null;
+
+            zip.forEach((relativePath, zipEntry) => {
+              if (!kmlFile && relativePath.toLowerCase().endsWith('.kml')) {
+                kmlFile = zipEntry;
+              }
+            });
+
+            if (!kmlFile) {
+              infoText.textContent =
+                `KMZ "${name}" does not contain a KML file that we can read.`;
+              continue;
+            }
+
+            const kmlText = await kmlFile.async('text');
+            const dom = new DOMParser().parseFromString(kmlText, 'text/xml');
+            geojson = toGeoJSON.kml(dom);
+          } else {
+            infoText.textContent =
+              `Unsupported file type for "${name}". Use KML, KMZ, GPX, or GeoJSON.`;
+            continue;
+          }
+
+          if (!geojson) {
+            infoText.textContent = `Could not parse "${name}".`;
+            continue;
+          }
+
+          const layer = L.geoJSON(geojson, {
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties || {};
+              const name =
+                props.name ||
+                props.Name ||
+                props.title ||
+                props.description ||
+                'Imported feature';
+              layer.bindPopup(`<b>${name}</b>`);
+            }
+          }).addTo(map);
+
+          importedLayers.push(layer);
+
+          try {
+            const layerBounds = layer.getBounds();
+            if (layerBounds && layerBounds.isValid && layerBounds.isValid()) {
+              if (overallBounds) {
+                overallBounds.extend(layerBounds);
+              } else {
+                overallBounds = layerBounds;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not compute bounds for layer:', e);
+          }
+        } catch (err) {
+          console.error(err);
+          infoText.textContent = `Error importing "${name}". See console for details.`;
+        }
+      }
+
+      if (overallBounds && overallBounds.isValid && overallBounds.isValid()) {
+        map.fitBounds(overallBounds);
+      }
+
+      if (files.length === 1) {
+        infoText.textContent = `Imported ${files[0].name}`;
+      } else {
+        infoText.textContent = `Imported ${files.length} files.`;
+      }
+
+      fileInput.value = '';
+    });
+
+    clearImportsBtn.addEventListener('click', () => {
+      importedLayers.forEach((layer) => map.removeLayer(layer));
+      importedLayers = [];
+      infoText.textContent = 'Imported layers cleared.';
+    });
+
+    // ------------ Live navigation (watchPosition) ------------
+    const btnStartNav = document.getElementById('btn-start-nav');
+const btnStopNav = document.getElementById('btn-stop-nav');
+let watchId = null;
+
+// Heading marker (your car icon)
+let navHeadingMarker = null;
+let lastNavLatLng = null;
+
+const headingIcon = L.divIcon({
+  className: '',
+  html: '<div class="heading-marker"><div class="heading-marker-arrow"></div></div>',
+  iconSize: [26, 26],
+  iconAnchor: [13, 13]
+});
+
+const btnFollowToggle = document.getElementById('btn-follow-toggle');
+const btnFollowLabel = document.getElementById('btn-follow-label');
+let followMap = true;
+btnFollowToggle.addEventListener('click', () => {
+  followMap = !followMap;
+  btnFollowLabel.textContent = followMap ? 'Follow map: ON' : 'Follow map: OFF';
+  btnFollowToggle.classList.toggle('primary', followMap);
+  if (followMap) {
+    infoText.textContent = 'Map will follow your position.';
+  } else {
+    infoText.textContent = 'Map will stay where you put it.';
+  }
+});
+// Bearing in degrees from point A to point B (0–360, 0 = north)
+function computeBearing(lat1, lon1, lat2, lon2) {
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) -
+    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+  let θ = Math.atan2(y, x) * 180 / Math.PI;  // -180..+180
+  if (θ < 0) θ += 360;                        // 0..360
+  return θ;
+}
+// Bearing in degrees from point A to point B (0–360, 0 = north)
+function computeBearing(lat1, lon1, lat2, lon2) {
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x =
+    Math.cos(φ1) * Math.sin(φ2) -
+    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+  let θ = Math.atan2(y, x) * 180 / Math.PI;  // -180..+180
+  if (θ < 0) θ += 360;                        // 0..360
+  return θ;
+}
+
+   function startNavigation() {
+  if (!navigator.geolocation) {
+    infoText.textContent =
+      'Geolocation is not supported by this device; cannot start navigation.';
+    return;
+  }
+
+  if (!routePoints.length) {
+    infoText.textContent =
+      'Create a route or trip first, then start navigation.';
+    return;
+  }
+
+  if (watchId !== null) {
+    infoText.textContent = 'Navigation is already running.';
+    return;
+  }
+
+  infoText.textContent = 'Starting navigation...';
+
+  // reset heading history
+  lastNavLatLng = null;
+
+  watchId = navigator.geolocation.watchPosition(
+    (position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const latlng = [lat, lng];
+
+      // Create or move the heading marker
+      if (!navHeadingMarker) {
+        navHeadingMarker = L.marker(latlng, { icon: headingIcon }).addTo(map);
+      } else {
+        navHeadingMarker.setLatLng(latlng);
+      }
+
+      // Follow the map if requested
+      if (followMap) {
+        map.setView(latlng, map.getZoom() < 15 ? 15 : map.getZoom());
+      }
+
+      // Rotate the arrow to show direction of travel
+      if (lastNavLatLng) {
+        const headingDeg = computeBearing(
+          lastNavLatLng[0],
+          lastNavLatLng[1],
+          lat,
+          lng
+        );
+
+        const el = navHeadingMarker.getElement();
+        if (el) {
+          const arrow = el.querySelector('.heading-marker-arrow');
+          if (arrow) {
+            arrow.style.transform = `rotate(${headingDeg}deg)`;
+          }
+        }
+      }
+
+      lastNavLatLng = [lat, lng];
+
+      // Distance + HUD (same logic you already had)
+      const lastStop = routePoints[routePoints.length - 1];
+      if (lastStop) {
+        const dMeters = L.latLng(lat, lng).distanceTo(
+          L.latLng(lastStop[0], lastStop[1])
+        );
+        const dKm = dMeters / 1000;
+
+        let base = 'Navigation active.';
+        if (lastRouteSummary) {
+          base += ` Total route: ${lastRouteSummary.distanceKm.toFixed(
+            2
+          )} km (~${lastRouteSummary.durationMin.toFixed(1)} min).`;
+        }
+        base += ` Straight-line distance to final stop: ${dKm.toFixed(2)} km.`;
+        infoText.textContent = base;
+
+        if (navHud) {
+          let kmh = null;
+          if (
+            typeof position.coords.speed === 'number' &&
+            !Number.isNaN(position.coords.speed)
+          ) {
+            kmh = position.coords.speed * 3.6;
+          }
+
+          let hud = `To final: ${dKm.toFixed(1)} km`;
+          if (lastRouteSummary) {
+            hud += ` | Total: ${lastRouteSummary.distanceKm.toFixed(
+              1
+            )} km, ~${lastRouteSummary.durationMin.toFixed(0)} min`;
+          }
+          if (kmh !== null) {
+            hud += ` | Speed: ${kmh.toFixed(0)} km/h`;
+          }
+
+          navHud.textContent = hud;
+        }
+      }
+    },
+    (error) => {
+      console.error('Nav watch error:', error);
+      switch (error.code) {
+        case error.PERMISSION_DENIED:
+          infoText.textContent = 'Location access denied for navigation.';
+          break;
+        case error.POSITION_UNAVAILABLE:
+          infoText.textContent =
+            'Position unavailable; navigation cannot update.';
+          break;
+        case error.TIMEOUT:
+          infoText.textContent =
+            'Timeout while trying to update navigation position.';
+          break;
+        default:
+          infoText.textContent =
+            'Unknown error while updating navigation position.';
+      }
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 0
+    }
+  );
+
+  navHud.textContent = 'Navigation active...';
+}
+
+
+   function stopNavigation() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+  if (navHeadingMarker) {
+    map.removeLayer(navHeadingMarker);
+    navHeadingMarker = null;
+  }
+  lastNavLatLng = null;
+  infoText.textContent = 'Navigation stopped.';
+  navHud.textContent = 'Route loaded. Navigation not active.';
+}
+
+
+    btnStartNav.addEventListener('click', startNavigation);
+    btnStopNav.addEventListener('click', stopNavigation);
+// Restore any last route from previous session
+restoreRouteFromStorage();
+
+    // ------------ Service worker registration ------------
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('sw.js')
+          .then((reg) => {
+            console.log('Service worker registered', reg.scope);
+          })
+          .catch((err) => {
+            console.error('Service worker registration failed', err);
+          });
+      });
+    }
+    // --- Layer visibility toggles from the legend UI ---
+const layerLegendEl = document.getElementById("layer-legend");
+
+if (layerLegendEl) {
+  const checkboxes = layerLegendEl.querySelectorAll('input[type="checkbox"][data-layer]');
+  checkboxes.forEach((cb) => {
+    cb.addEventListener("change", (e) => {
+      const layerId = e.target.dataset.layer;
+      const visible = e.target.checked ? "visible" : "none";
+      if (map.getLayer(layerId)) {
+        map.setLayoutProperty(layerId, "visibility", visible);
+      }
+    });
+  });
+}
+// --- Collapsible behaviour for the legend chip ---
+const legendToggleBtn = document.getElementById("legend-toggle");
+
+if (legendToggleBtn && layerLegendEl) {
+  legendToggleBtn.addEventListener("click", () => {
+    layerLegendEl.classList.toggle("collapsed");
+  });
+}
+
+  </script>
+</body>
+</html>
