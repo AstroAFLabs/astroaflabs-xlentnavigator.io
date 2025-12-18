@@ -2215,13 +2215,23 @@ function computeBearing(lat1, lon1, lat2, lon2) {
           }
 
           let hud = `To final: ${dKm.toFixed(1)} km`;
+
           if (lastRouteSummary) {
-            hud += ` | Total: ${lastRouteSummary.distanceKm.toFixed(
-              1
-            )} km, ~${lastRouteSummary.durationMin.toFixed(0)} min`;
+            const stopsCount =
+              typeof lastRouteSummary.stopsCount === 'number'
+                ? lastRouteSummary.stopsCount
+                : routePoints.length;
+
+            const stopsLabel =
+              stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
+
+            hud += ` • Trip: ${stopsLabel}, ` +
+              `${lastRouteSummary.distanceKm.toFixed(1)} km, ` +
+              `~${lastRouteSummary.durationMin.toFixed(0)} min`;
           }
+
           if (kmh !== null) {
-            hud += ` | Speed: ${kmh.toFixed(0)} km/h`;
+            hud += ` • Speed: ${kmh.toFixed(0)} km/h`;
           }
 
           navHud.textContent = hud;
