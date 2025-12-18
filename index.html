@@ -1461,19 +1461,27 @@ function saveRouteToStorage() {
           roadRoutePolyline = L.polyline(coords, { weight: 5 }).addTo(map);
         } else {
           roadRoutePolyline.setLatLngs(coords);
-        }
+        const stopsCount = routePoints.length;
 
-        lastRouteSummary = { distanceKm, durationMin };
+        lastRouteSummary = {
+          distanceKm,
+          durationMin,
+          stopsCount
+        };
 
-// Save route + summary
-saveRouteToStorage();
+        // Save route + summary
+        saveRouteToStorage();
 
-infoText.textContent =
-  `Route points: ${routePoints.length}. Distance: ` +
-  `${distanceKm.toFixed(2)} km, duration ~ ${durationMin.toFixed(1)} min.`;
+        const stopsLabel =
+          stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
 
-navHud.textContent =
-  `Route: ${distanceKm.toFixed(1)} km, ~${durationMin.toFixed(0)} min.`;
+        infoText.textContent =
+          `Route: ${stopsLabel}, ` +
+          `${distanceKm.toFixed(2)} km, ~${durationMin.toFixed(1)} min.`;
+
+        navHud.textContent =
+          `Trip ready • ${stopsLabel} • ` +
+          `${distanceKm.toFixed(1)} km • ~${durationMin.toFixed(0)} min`;
 
       } catch (err) {
         console.error(err);
