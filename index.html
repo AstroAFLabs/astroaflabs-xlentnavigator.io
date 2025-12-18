@@ -1073,8 +1073,15 @@ function restoreRouteFromStorage() {
 
   if (savedSummary && typeof savedSummary.distanceKm === 'number') {
     lastRouteSummary = savedSummary;
+
+    const stopsCount = Array.isArray(savedPoints) ? savedPoints.length : 0;
+    const stopsLabel =
+      stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
+
     navHud.textContent =
-      `Route: ${savedSummary.distanceKm.toFixed(1)} km, ~${savedSummary.durationMin.toFixed(0)} min.`;
+      `Trip ready • ${stopsLabel} • ` +
+      `${savedSummary.distanceKm.toFixed(1)} km • ` +
+      `~${savedSummary.durationMin.toFixed(0)} min`;
   } else {
     navHud.textContent = 'Route restored. Distance will be recalculated.';
   }
