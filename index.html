@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,7 +12,6 @@
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
   />
-
 
   <link rel="manifest" href="manifest.webmanifest" />
   <meta name="theme-color" content="#1e88e5" />
@@ -96,33 +94,6 @@
       letter-spacing: 0.03em;
     }
 
-    .legend {
-                line-height: 18px;
-                color: #333;
-                background: #fff;
-                padding: 6px 8px;
-                font: 12px/14px Arial, Helvetica, sans-serif;
-                box-shadow: 0 0 15px rgba(0,0,0,.2);
-                border-radius: 5px;
-            }
-
-            .legend i {
-                width: 14px;
-                height: 14px;
-                display: inline-block;
-                vertical-align: middle;
-                margin-right: 6px;
-                border-radius: 50%;
-            }
-
-            .leaflet-tooltip {
-                white-space: normal !important;
-                word-wrap: break-word;
-                max-width: 1000px !important;
-                min-width: 400px;
-                font-size: 14px;
-            }
-    
     /* Navigation HUD chip */
     #nav-hud {
       position: absolute;
@@ -196,30 +167,26 @@
 
     /* Main control panel (bottom sheet) */
     #control-panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 4;
-
-  padding: 10px 12px 14px;
-  background: var(--card-bg);
-  border-top-left-radius: 18px;
-  border-top-right-radius: 18px;
-  border-top: 1px solid var(--card-border);
-  box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.9);
-      transform: translateY(calc(100% - 56px));  /* only ~56px remains visible */
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      padding: 10px 12px 14px;
+      background: var(--card-bg);
+      border-top-left-radius: 18px;
+      border-top-right-radius: 18px;
+      border-top: 1px solid var(--card-border);
+      box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.9);
+      transform: translateY(calc(100% - 56px)); /* ~56px visible when "collapsed" */
       transition: transform 0.28s ease;
-     /* Layout */
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  /* NEW: scrolling when open */
-  max-height: 65vh;                    /* panel never covers more than ~65% of screen height */
-  overflow-y: auto;                    /* show scrollbar when content is taller */
-  -webkit-overflow-scrolling: touch;   /* smooth scrolling on mobile */
-}
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 65vh;                   /* never cover more than ~65% of height */
+      overflow-y: auto;                   /* scrollable when content is tall */
+      -webkit-overflow-scrolling: touch;  /* smooth scrolling mobile */
+    }
 
     #control-panel.open {
       transform: translateY(0);
@@ -274,28 +241,29 @@
       color: #fecaca;
       border-color: rgba(239, 68, 68, 0.7);
     }
-/* Heading marker (your car) */
-.heading-marker {
-  width: 26px;
-  height: 26px;
-  border-radius: 9px;
-  background: rgba(34, 197, 94, 0.16);
-  border: 2px solid #22c55e;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.6);
-}
 
-.heading-marker-arrow {
-  width: 0;
-  height: 0;
-  border-left: 6px solid transparent;
-  border-right: 6px solid transparent;
-  border-bottom: 11px solid #22c55e;
-  transform-origin: 50% 80%;
-  transform: rotate(0deg);
-}
+    /* Heading marker (your car) */
+    .heading-marker {
+      width: 26px;
+      height: 26px;
+      border-radius: 9px;
+      background: rgba(34, 197, 94, 0.16);
+      border: 2px solid #22c55e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.6);
+    }
+
+    .heading-marker-arrow {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 11px solid #22c55e;
+      transform-origin: 50% 80%;
+      transform: rotate(0deg);
+    }
 
     /* Sections inside panel */
     .panel-section {
@@ -361,7 +329,7 @@
       resize: vertical;
     }
 
-    /* Small buttons */
+    /* Buttons */
     .btn {
       border-radius: 9px;
       border: 1px solid rgba(148, 163, 184, 0.6);
@@ -537,128 +505,123 @@
       color: var(--muted);
     }
 
- /* Collapsible, compact legend / layers chip */
+    /* Collapsible, compact legend / layers chip */
+    #layer-legend {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 5;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+    }
 
-#layer-legend {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-  z-index: 5;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
-}
+    /* Toggle button (always visible) */
+    #legend-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+      color: #111827;
+      cursor: pointer;
+    }
 
-/* Toggle button (always visible) */
-#legend-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.55rem;
-  font-size: 0.7rem;
-  border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.15);
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
-  color: #111827;
-  cursor: pointer;
-}
+    #legend-toggle:active {
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25) inset;
+    }
 
-#legend-toggle:active {
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25) inset;
-}
+    #legend-toggle-label {
+      font-weight: 500;
+    }
 
-#legend-toggle-label {
-  font-weight: 500;
-}
+    #legend-toggle-icon {
+      font-size: 0.65rem;
+      opacity: 0.7;
+    }
 
-#legend-toggle-icon {
-  font-size: 0.65rem;
-  opacity: 0.7;
-}
+    /* Inner content (only when expanded) */
+    #legend-inner {
+      margin-top: 0.35rem;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 10px;
+      padding: 0.4rem 0.5rem;
+      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.22);
+      font-size: 0.7rem;
+      min-width: 180px;
+    }
 
-/* Inner content (only when expanded) */
-#legend-inner {
-  margin-top: 0.35rem;
-  background: rgba(255, 255, 255, 0.97);
-  border-radius: 10px;
-  padding: 0.4rem 0.5rem;
-  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.22);
-  font-size: 0.7rem;
-  min-width: 180px;
-}
+    /* Collapsed state: hide inner */
+    #layer-legend.collapsed #legend-inner {
+      display: none;
+    }
 
-/* Collapsed state: hide inner */
-#layer-legend.collapsed #legend-inner {
-  display: none;
-}
+    /* Expanded state: toggle icon direction */
+    #layer-legend.collapsed #legend-toggle-icon {
+      transform: rotate(180deg);
+    }
 
-/* Expanded state: toggle icon direction */
-#layer-legend.collapsed #legend-toggle-icon {
-  transform: rotate(180deg);
-}
+    .legend-section {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
 
-/* Legend internals */
-.legend-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
+    .legend-title {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.2rem;
+    }
 
-.legend-title {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.2rem;
-}
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      cursor: pointer;
+    }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  cursor: pointer;
-}
+    .legend-item input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+    }
 
-.legend-item input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
-}
+    .legend-swatch {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(15, 23, 42, 0.15);
+    }
 
-.legend-swatch {
-  width: 12px;
-  height: 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(15, 23, 42, 0.15);
-}
+    .legend-swatch.day {
+      background: #2563eb; /* day program / centre */
+    }
 
-/* Match your existing colours */
-.legend-swatch.day {
-  background: #2563eb; /* blue – day program / centre */
-}
+    .legend-swatch.medical {
+      background: #16a34a; /* medical / allied health */
+    }
 
-.legend-swatch.medical {
-  background: #16a34a; /* green – medical / allied health */
-}
+    .legend-swatch.social {
+      background: #f97316; /* social / activities */
+    }
 
-.legend-swatch.social {
-  background: #f97316; /* orange – social / activities */
-}
+    .legend-text {
+      white-space: nowrap;
+    }
 
-.legend-text {
-  white-space: nowrap;
-}
-
-/* Slightly bigger touch targets on small screens */
-@media (max-width: 768px) {
-  #legend-toggle {
-    padding: 0.3rem 0.7rem;
-    font-size: 0.75rem;
-  }
-  #legend-inner {
-    font-size: 0.75rem;
-  }
-}
-
-
+    /* Optional future POI colours */
+    .legend-swatch.poi-park {
+      background: #16a34a;
+    }
+    .legend-swatch.poi-food {
+      background: #f97316;
+    }
+    .legend-swatch.poi-participant {
+      background: #6366f1;
+    }
 
     /* Mobile tweaks */
     @media (max-width: 768px) {
@@ -686,70 +649,69 @@
     <div id="app-header-logo">😊</div>
     <div id="app-header-title">OSM Route Planner</div>
   </div>
-    
-  
+
   <!-- Navigation HUD -->
   <div id="nav-hud">No route active yet.</div>
 
   <!-- Map -->
   <div id="map"></div>
-<div id="layer-legend" class="collapsed">
-  <button id="legend-toggle" type="button">
-    <span id="legend-toggle-label">Layers</span>
-    <span id="legend-toggle-icon">▲</span>
-  </button>
 
-  <div id="legend-inner">
-    <div class="legend-section">
-      <div class="legend-title">Layers</div>
+  <!-- Legend / Layers chip -->
+  <div id="layer-legend" class="collapsed">
+    <button id="legend-toggle" type="button">
+      <span id="legend-toggle-label">Layers</span>
+      <span id="legend-toggle-icon">▲</span>
+    </button>
 
-      <label class="legend-item">
-        <input type="checkbox" data-layer="centres-day" checked />
-        <span class="legend-swatch day"></span>
-        <span class="legend-text">Day programs / centres</span>
-      </label>
+    <div id="legend-inner">
+      <div class="legend-section">
+        <div class="legend-title">Centres</div>
 
-      <label class="legend-item">
-        <input type="checkbox" data-layer="centres-medical" checked />
-        <span class="legend-swatch medical"></span>
-        <span class="legend-text">Medical / allied health</span>
-      </label>
+        <label class="legend-item">
+          <input type="checkbox" data-layer="centres-day" checked />
+          <span class="legend-swatch day"></span>
+          <span class="legend-text">Day programs / centres</span>
+        </label>
 
-      <label class="legend-item">
-        <input type="checkbox" data-layer="centres-social" checked />
-        <span class="legend-swatch social"></span>
-        <span class="legend-text">Social / activities</span>
-      </label>
+        <label class="legend-item">
+          <input type="checkbox" data-layer="centres-medical" checked />
+          <span class="legend-swatch medical"></span>
+          <span class="legend-text">Medical / allied health</span>
+        </label>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="centres-social" checked />
+          <span class="legend-swatch social"></span>
+          <span class="legend-text">Social / activities</span>
+        </label>
+      </div>
+
+      <div class="legend-section">
+        <div class="legend-title">POI layers</div>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="poi-parks" checked />
+          <span class="legend-swatch poi-park"></span>
+          <span class="legend-text">Parks</span>
+        </label>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="poi-food" checked />
+          <span class="legend-swatch poi-food"></span>
+          <span class="legend-text">Food / cafés</span>
+        </label>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="poi-participant" checked />
+          <span class="legend-swatch poi-participant"></span>
+          <span class="legend-text">Participant places</span>
+        </label>
+      </div>
     </div>
-<div class="legend-section">
-  <div class="legend-title">POI layers</div>
-
-  <label class="legend-item">
-    <input type="checkbox" data-layer="poi-parks" checked />
-    <span class="legend-swatch poi-park"></span>
-    <span class="legend-text">Parks</span>
-  </label>
-
-  <label class="legend-item">
-    <input type="checkbox" data-layer="poi-food" checked />
-    <span class="legend-swatch poi-food"></span>
-    <span class="legend-text">Food / cafés</span>
-  </label>
-
-  <label class="legend-item">
-    <input type="checkbox" data-layer="poi-participant" checked />
-    <span class="legend-swatch poi-participant"></span>
-    <span class="legend-text">Participant places</span>
-  </label>
-</div>
   </div>
-</div> 
-
 
   <!-- Floating locate button -->
-  <button id="fab-locate" title="Locate me">
-    ⬤
-  </button>
+  <button id="fab-locate" title="Locate me">⬤</button>
 
   <!-- Floating panel toggle -->
   <button id="fab-panel" title="Show controls">
@@ -759,21 +721,20 @@
   <!-- Bottom control panel -->
   <div id="control-panel">
     <div id="panel-top-row">
-  <div id="panel-title">Trip & map controls</div>
-  <div id="panel-actions">
-    <button id="btn-follow-toggle" class="pill-button" type="button">
-      <span class="emoji">📡</span>
-      <span id="btn-follow-label">Follow map: ON</span>
-    </button>
-    <button id="btn-start-nav" class="pill-button primary" type="button">
-      <span class="emoji">▶️</span> Start nav
-    </button>
-    <button id="btn-stop-nav" class="pill-button danger" type="button">
-      <span class="emoji">⏹</span> Stop
-    </button>
-  </div>
-</div>
-
+      <div id="panel-title">Trip & map controls</div>
+      <div id="panel-actions">
+        <button id="btn-follow-toggle" class="pill-button primary" type="button">
+          <span class="emoji">📡</span>
+          <span id="btn-follow-label">Follow map: ON</span>
+        </button>
+        <button id="btn-start-nav" class="pill-button primary" type="button">
+          <span class="emoji">▶️</span> Start nav
+        </button>
+        <button id="btn-stop-nav" class="pill-button danger" type="button">
+          <span class="emoji">⏹</span> Stop
+        </button>
+      </div>
+    </div>
 
     <div id="info-text">
       Tap the map or search to add stops. Build a trip, then start navigation.
@@ -891,13 +852,6 @@
           <span class="emoji">🚐</span>
           <span>Trip builder</span>
         </div>
-        <div id="nav-row">
-  <label>
-    <input type="checkbox" id="nav-mode-checkbox" />
-    Nav mode (follow & rotate)
-  </label>
-</div>
-
         <div class="section-toggle-icon">▾</div>
       </div>
       <div class="section-body" data-section-body="trip">
@@ -1002,7 +956,7 @@
     const locateFab = document.getElementById('fab-locate');
     const infoText = document.getElementById('info-text');
     const navHud = document.getElementById('nav-hud');
-const notesTextarea = document.getElementById('notes-textarea');
+    const notesTextarea = document.getElementById('notes-textarea');
 
     panelToggleBtn.addEventListener('click', () => {
       const isOpen = controlPanel.classList.toggle('open');
@@ -1027,161 +981,47 @@ const notesTextarea = document.getElementById('notes-textarea');
       });
     });
 
-    // Default: collapse import section and notes slightly, keep search open
-    ['import'].forEach((sec) => {
+    // Default: collapse import and notes sections
+    ['import', 'notes'].forEach((sec) => {
       const body = document.querySelector(
         `.section-body[data-section-body="${sec}"]`
       );
-      const header = document.querySelector(
+      const headerIcon = document.querySelector(
         `.section-header[data-section="${sec}"] .section-toggle-icon`
       );
-      if (body && header) {
+      if (body && headerIcon) {
         body.classList.add('collapsed');
-        header.textContent = '▸';
+        headerIcon.textContent = '▸';
       }
     });
-// ---- Persist trip notes in localStorage ----
-const NOTES_KEY = 'osmRouteNotes';
 
-function loadNotes() {
-  try {
-    const saved = localStorage.getItem(NOTES_KEY);
-    if (saved !== null) {
-      notesTextarea.value = saved;
+    // ---- Persist trip notes in localStorage ----
+    const NOTES_KEY = 'osmRouteNotes';
+
+    function loadNotes() {
+      try {
+        const saved = localStorage.getItem(NOTES_KEY);
+        if (saved !== null) {
+          notesTextarea.value = saved;
+        }
+      } catch (e) {
+        console.error('Error loading notes', e);
+      }
     }
-  } catch (e) {
-    console.error('Error loading notes', e);
-  }
-}
 
-function restoreRouteFromStorage() {
-  let savedPoints = null;
-  let savedSummary = null;
-  try {
-    const pointsRaw = localStorage.getItem(ROUTE_KEY);
-    if (pointsRaw) {
-      savedPoints = JSON.parse(pointsRaw);
+    function saveNotes() {
+      try {
+        localStorage.setItem(NOTES_KEY, notesTextarea.value);
+      } catch (e) {
+        console.error('Error saving notes', e);
+      }
     }
-    const summaryRaw = localStorage.getItem(ROUTE_SUMMARY_KEY);
-    if (summaryRaw) {
-      savedSummary = JSON.parse(summaryRaw);
-    }
-  } catch (e) {
-    console.error('Error restoring route from storage', e);
-  }
 
-  if (!Array.isArray(savedPoints) || !savedPoints.length) {
-    navHud.textContent = 'No route active yet.';
-    return;
-  }
+    notesTextarea.addEventListener('input', saveNotes);
+    loadNotes();
 
-  // Recreate markers and polyline
-  routePoints = [];
-  routeMarkers.forEach((m) => map.removeLayer(m));
-  routeMarkers = [];
-  if (roadRoutePolyline) {
-    map.removeLayer(roadRoutePolyline);
-    roadRoutePolyline = null;
-  }
-
-  savedPoints.forEach(([lat, lng]) => {
-    routePoints.push([lat, lng]);
-    const marker = L.circleMarker([lat, lng], { radius: 5 }).addTo(map);
-    routeMarkers.push(marker);
-  });
-
-  // Call OSRM to rebuild the route line / summary
-  updateRoadRoute().catch((err) => console.error(err));
-
-  if (savedSummary && typeof savedSummary.distanceKm === 'number') {
-    lastRouteSummary = savedSummary;
-
-    const stopsCount = Array.isArray(savedPoints) ? savedPoints.length : 0;
-    const stopsLabel =
-      stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
-
-    navHud.textContent =
-      `Trip ready • ${stopsLabel} • ` +
-      `${savedSummary.distanceKm.toFixed(1)} km • ` +
-      `~${savedSummary.durationMin.toFixed(0)} min`;
-  } else {
-    navHud.textContent = 'Route restored. Distance will be recalculated.';
-  }
-}
-
-function saveNotes() {
-  try {
-    localStorage.setItem(NOTES_KEY, notesTextarea.value);
-  } catch (e) {
-    console.error('Error saving notes', e);
-  }
-}
-
-notesTextarea.addEventListener('input', () => {
-  // Save on every change; they’re small
-  saveNotes();
-});
-
-loadNotes();
-
-    // ------------ Map + core logic (adapted from previous versions) ------------
+    // ------------ Map + core logic ------------
     const map = L.map('map').setView([-34.9285, 138.6007], 12);
-// --- Example centres/activities GeoJSON (Adelaide-ish demo data) ---
-const exampleCentresGeoJSON = {
-  type: "FeatureCollection",
-  features: [
-    {
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [138.6007, -34.9285] // Adelaide CBD
-      },
-      properties: {
-        name: "Central Day Program",
-        address: "Adelaide CBD",
-        type: "day"
-      }
-    },
-    {
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [138.568, -34.978] // Clapham area
-      },
-      properties: {
-        name: "Clapham Support Centre",
-        address: "Near Clapham SA",
-        type: "day"
-      }
-    },
-    {
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [138.530, -34.930] // Western suburbs
-      },
-      properties: {
-        name: "Western Allied Health Clinic",
-        address: "Western suburbs",
-        type: "medical"
-      }
-    },
-    {
-      type: "Feature",
-      geometry: {
-        type: "Point",
-        coordinates: [138.650, -34.950] // Eastern suburbs
-      },
-      properties: {
-        name: "Eastern Recreation Group",
-        address: "Eastern suburbs",
-        type: "social"
-      }
-    }
-  ]
-};
-
-
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -1192,56 +1032,111 @@ const exampleCentresGeoJSON = {
     const adelaideMarker = L.marker([-34.9285, 138.6007]).addTo(map);
     adelaideMarker.bindPopup('<b>Hello Ben!</b><br>This is Adelaide on OSM.');
 
-    // --- Build Leaflet layers from exampleCentresGeoJSON ---
-const centreLayers = {};
+    // --- Example centres/activities GeoJSON (Adelaide-ish demo data) ---
+    const exampleCentresGeoJSON = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [138.6007, -34.9285] // Adelaide CBD
+          },
+          properties: {
+            name: "Central Day Program",
+            address: "Adelaide CBD",
+            type: "day"
+          }
+        },
+        {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [138.568, -34.978] // Clapham area
+          },
+          properties: {
+            name: "Clapham Support Centre",
+            address: "Near Clapham SA",
+            type: "day"
+          }
+        },
+        {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [138.530, -34.930] // Western suburbs
+          },
+          properties: {
+            name: "Western Allied Health Clinic",
+            address: "Western suburbs",
+            type: "medical"
+          }
+        },
+        {
+          type: "Feature",
+          geometry: {
+            type: "Point",
+            coordinates: [138.650, -34.950] // Eastern suburbs
+          },
+          properties: {
+            name: "Eastern Recreation Group",
+            address: "Eastern suburbs",
+            type: "social"
+          }
+        }
+      ]
+    };
 
-centreLayers['centres-day'] = L.geoJSON(exampleCentresGeoJSON, {
-  filter: f => f.properties && f.properties.type === 'day',
-  pointToLayer: (feature, latlng) =>
-    L.circleMarker(latlng, {
-      radius: 7,
-      color: '#2563eb',
-      fillColor: '#2563eb',
-      fillOpacity: 1,
-      weight: 1.5
-    }).bindPopup(
-      `<b>${feature.properties.name || 'Centre'}</b><br>` +
-      `${feature.properties.address || ''}<br>` +
-      `<span style="color:#6b7280;font-size:11px;">Type: day</span>`
-    )
-}).addTo(map);
+    // Build Leaflet layers from exampleCentresGeoJSON
+    const centreLayers = {};
 
-centreLayers['centres-medical'] = L.geoJSON(exampleCentresGeoJSON, {
-  filter: f => f.properties && f.properties.type === 'medical',
-  pointToLayer: (feature, latlng) =>
-    L.circleMarker(latlng, {
-      radius: 7,
-      color: '#16a34a',
-      fillColor: '#16a34a',
-      fillOpacity: 1,
-      weight: 1.5
-    }).bindPopup(
-      `<b>${feature.properties.name || 'Centre'}</b><br>` +
-      `${feature.properties.address || ''}<br>` +
-      `<span style="color:#6b7280;font-size:11px;">Type: medical</span>`
-    )
-}).addTo(map);
+    centreLayers['centres-day'] = L.geoJSON(exampleCentresGeoJSON, {
+      filter: f => f.properties && f.properties.type === 'day',
+      pointToLayer: (feature, latlng) =>
+        L.circleMarker(latlng, {
+          radius: 7,
+          color: '#2563eb',
+          fillColor: '#2563eb',
+          fillOpacity: 1,
+          weight: 1.5
+        }).bindPopup(
+          `<b>${feature.properties.name || 'Centre'}</b><br>` +
+          `${feature.properties.address || ''}<br>` +
+          `<span style="color:#6b7280;font-size:11px;">Type: day</span>`
+        )
+    }).addTo(map);
 
-centreLayers['centres-social'] = L.geoJSON(exampleCentresGeoJSON, {
-  filter: f => f.properties && f.properties.type === 'social',
-  pointToLayer: (feature, latlng) =>
-    L.circleMarker(latlng, {
-      radius: 7,
-      color: '#f97316',
-      fillColor: '#f97316',
-      fillOpacity: 1,
-      weight: 1.5
-    }).bindPopup(
-      `<b>${feature.properties.name || 'Centre'}</b><br>` +
-      `${feature.properties.address || ''}<br>` +
-      `<span style="color:#6b7280;font-size:11px;">Type: social</span>`
-    )
-}).addTo(map);
+    centreLayers['centres-medical'] = L.geoJSON(exampleCentresGeoJSON, {
+      filter: f => f.properties && f.properties.type === 'medical',
+      pointToLayer: (feature, latlng) =>
+        L.circleMarker(latlng, {
+          radius: 7,
+          color: '#16a34a',
+          fillColor: '#16a34a',
+          fillOpacity: 1,
+          weight: 1.5
+        }).bindPopup(
+          `<b>${feature.properties.name || 'Centre'}</b><br>` +
+          `${feature.properties.address || ''}<br>` +
+          `<span style="color:#6b7280;font-size:11px;">Type: medical</span>`
+        )
+    }).addTo(map);
+
+    centreLayers['centres-social'] = L.geoJSON(exampleCentresGeoJSON, {
+      filter: f => f.properties && f.properties.type === 'social',
+      pointToLayer: (feature, latlng) =>
+        L.circleMarker(latlng, {
+          radius: 7,
+          color: '#f97316',
+          fillColor: '#f97316',
+          fillOpacity: 1,
+          weight: 1.5
+        }).bindPopup(
+          `<b>${feature.properties.name || 'Centre'}</b><br>` +
+          `${feature.properties.address || ''}<br>` +
+          `<span style="color:#6b7280;font-size:11px;">Type: social</span>`
+        )
+    }).addTo(map);
 
     let clickMarker = null;
     let userLocationMarker = null;
@@ -1302,13 +1197,10 @@ centreLayers['centres-social'] = L.geoJSON(exampleCentresGeoJSON, {
     locateBtn.addEventListener('click', performLocate);
     locateFab.addEventListener('click', performLocate);
 
-
     // ------------ Search using Nominatim ------------
     const searchInput = document.getElementById('search-input');
     const searchBtn = document.getElementById('search-btn');
-    const addSearchWaypointBtn = document.getElementById(
-      'add-search-waypoint-btn'
-    );
+    const addSearchWaypointBtn = document.getElementById('add-search-waypoint-btn');
     const saveFavouriteBtn = document.getElementById('save-favourite-btn');
 
     let searchMarker = null;
@@ -1394,26 +1286,28 @@ centreLayers['centres-social'] = L.geoJSON(exampleCentresGeoJSON, {
 
     let routeMode = false;
     const ROUTE_KEY = 'osmRouteLastRoute';
-const ROUTE_SUMMARY_KEY = 'osmRouteLastRouteSummary';
-
-function saveRouteToStorage() {
-  try {
-    localStorage.setItem(ROUTE_KEY, JSON.stringify(routePoints));
-    if (lastRouteSummary) {
-      localStorage.setItem(ROUTE_SUMMARY_KEY, JSON.stringify(lastRouteSummary));
-    } else {
-      localStorage.removeItem(ROUTE_SUMMARY_KEY);
-    }
-  } catch (e) {
-    console.error('Error saving route', e);
-  }
-}
+    const ROUTE_SUMMARY_KEY = 'osmRouteLastRouteSummary';
 
     let routePoints = [];
     let routeMarkers = [];
     let roadRoutePolyline = null;
-
     let lastRouteSummary = null;
+
+    function saveRouteToStorage() {
+      try {
+        localStorage.setItem(ROUTE_KEY, JSON.stringify(routePoints));
+        if (lastRouteSummary) {
+          localStorage.setItem(
+            ROUTE_SUMMARY_KEY,
+            JSON.stringify(lastRouteSummary)
+          );
+        } else {
+          localStorage.removeItem(ROUTE_SUMMARY_KEY);
+        }
+      } catch (e) {
+        console.error('Error saving route', e);
+      }
+    }
 
     routeModeCheckbox.addEventListener('change', (e) => {
       routeMode = e.target.checked;
@@ -1427,24 +1321,23 @@ function saveRouteToStorage() {
     });
 
     function clearRouteOnly() {
-  routePoints = [];
-  if (roadRoutePolyline) {
-    map.removeLayer(roadRoutePolyline);
-    roadRoutePolyline = null;
-  }
-  routeMarkers.forEach((m) => map.removeLayer(m));
-  routeMarkers = [];
-  lastRouteSummary = null;
-  navHud.textContent = 'No route active.';
+      routePoints = [];
+      if (roadRoutePolyline) {
+        map.removeLayer(roadRoutePolyline);
+        roadRoutePolyline = null;
+      }
+      routeMarkers.forEach((m) => map.removeLayer(m));
+      routeMarkers = [];
+      lastRouteSummary = null;
+      navHud.textContent = 'No route active.';
 
-  try {
-    localStorage.removeItem(ROUTE_KEY);
-    localStorage.removeItem(ROUTE_SUMMARY_KEY);
-  } catch (e) {
-    console.error('Error clearing route from storage', e);
-  }
-}
-
+      try {
+        localStorage.removeItem(ROUTE_KEY);
+        localStorage.removeItem(ROUTE_SUMMARY_KEY);
+      } catch (e) {
+        console.error('Error clearing route from storage', e);
+      }
+    }
 
     clearRouteBtn.addEventListener('click', () => {
       clearRouteOnly();
@@ -1490,8 +1383,9 @@ function saveRouteToStorage() {
           roadRoutePolyline = L.polyline(coords, { weight: 5 }).addTo(map);
         } else {
           roadRoutePolyline.setLatLngs(coords);
+        }
+
         const stopsCount = routePoints.length;
-}
 
         lastRouteSummary = {
           distanceKm,
@@ -1499,7 +1393,6 @@ function saveRouteToStorage() {
           stopsCount
         };
 
-        // Save route + summary
         saveRouteToStorage();
 
         const stopsLabel =
@@ -1512,7 +1405,6 @@ function saveRouteToStorage() {
         navHud.textContent =
           `Trip ready • ${stopsLabel} • ` +
           `${distanceKm.toFixed(1)} km • ~${durationMin.toFixed(0)} min`;
-
       } catch (err) {
         console.error(err);
         infoText.textContent = 'Error fetching road route. Try again later.';
@@ -1573,9 +1465,6 @@ function saveRouteToStorage() {
 
       const [lat, lng] = lastSearchLatLng;
       addWaypoint(lat, lng, 'search result');
-      // ---- Restore last route from localStorage (if any) ----
-
-
     });
 
     // ------------ Folders + favourites in localStorage ------------
@@ -1647,7 +1536,10 @@ function saveRouteToStorage() {
 
     function saveFavourites() {
       try {
-        localStorage.setItem('osmRouteFavourites', JSON.stringify(favouriteFolders));
+        localStorage.setItem(
+          'osmRouteFavourites',
+          JSON.stringify(favouriteFolders)
+        );
       } catch (e) {
         console.error('Error saving favourites:', e);
       }
@@ -2092,224 +1984,258 @@ function saveRouteToStorage() {
 
     // ------------ Live navigation (watchPosition) ------------
     const btnStartNav = document.getElementById('btn-start-nav');
-const btnStopNav = document.getElementById('btn-stop-nav');
-let watchId = null;
+    const btnStopNav = document.getElementById('btn-stop-nav');
+    let watchId = null;
 
-// Heading marker (your car icon)
-let navHeadingMarker = null;
-let lastNavLatLng = null;
+    // Heading marker (your car icon)
+    let navHeadingMarker = null;
+    let lastNavLatLng = null;
 
-const headingIcon = L.divIcon({
-  className: '',
-  html: '<div class="heading-marker"><div class="heading-marker-arrow"></div></div>',
-  iconSize: [26, 26],
-  iconAnchor: [13, 13]
-});
+    const headingIcon = L.divIcon({
+      className: '',
+      html: '<div class="heading-marker"><div class="heading-marker-arrow"></div></div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
 
-const btnFollowToggle = document.getElementById('btn-follow-toggle');
-const btnFollowLabel = document.getElementById('btn-follow-label');
-let followMap = true;
-btnFollowToggle.addEventListener('click', () => {
-  followMap = !followMap;
-  btnFollowLabel.textContent = followMap ? 'Follow map: ON' : 'Follow map: OFF';
-  btnFollowToggle.classList.toggle('primary', followMap);
-  if (followMap) {
-    infoText.textContent = 'Map will follow your position.';
-  } else {
-    infoText.textContent = 'Map will stay where you put it.';
-  }
-});
-// Bearing in degrees from point A to point B (0–360, 0 = north)
-function computeBearing(lat1, lon1, lat2, lon2) {
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const btnFollowToggle = document.getElementById('btn-follow-toggle');
+    const btnFollowLabel = document.getElementById('btn-follow-label');
+    let followMap = true;
 
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x =
-    Math.cos(φ1) * Math.sin(φ2) -
-    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-
-  let θ = Math.atan2(y, x) * 180 / Math.PI;  // -180..+180
-  if (θ < 0) θ += 360;                        // 0..360
-  return θ;
-}
-// Bearing in degrees from point A to point B (0–360, 0 = north)
-function computeBearing(lat1, lon1, lat2, lon2) {
-  const φ1 = lat1 * Math.PI / 180;
-  const φ2 = lat2 * Math.PI / 180;
-  const Δλ = (lon2 - lon1) * Math.PI / 180;
-
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x =
-    Math.cos(φ1) * Math.sin(φ2) -
-    Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
-
-  let θ = Math.atan2(y, x) * 180 / Math.PI;  // -180..+180
-  if (θ < 0) θ += 360;                        // 0..360
-  return θ;
-}
-
-   function startNavigation() {
-  if (!navigator.geolocation) {
-    infoText.textContent =
-      'Geolocation is not supported by this device; cannot start navigation.';
-    return;
-  }
-
-  if (!routePoints.length) {
-    infoText.textContent =
-      'Create a route or trip first, then start navigation.';
-    return;
-  }
-
-  if (watchId !== null) {
-    infoText.textContent = 'Navigation is already running.';
-    return;
-  }
-
-  infoText.textContent = 'Starting navigation...';
-
-  // reset heading history
-  lastNavLatLng = null;
-
-  watchId = navigator.geolocation.watchPosition(
-    (position) => {
-      const lat = position.coords.latitude;
-      const lng = position.coords.longitude;
-      const latlng = [lat, lng];
-
-      // Create or move the heading marker
-      if (!navHeadingMarker) {
-        navHeadingMarker = L.marker(latlng, { icon: headingIcon }).addTo(map);
-      } else {
-        navHeadingMarker.setLatLng(latlng);
-      }
-
-      // Follow the map if requested
+    btnFollowToggle.addEventListener('click', () => {
+      followMap = !followMap;
+      btnFollowLabel.textContent = followMap ? 'Follow map: ON' : 'Follow map: OFF';
+      btnFollowToggle.classList.toggle('primary', followMap);
       if (followMap) {
-        map.setView(latlng, map.getZoom() < 15 ? 15 : map.getZoom());
+        infoText.textContent = 'Map will follow your position.';
+      } else {
+        infoText.textContent = 'Map will stay where you put it.';
       }
+    });
 
-      // Rotate the arrow to show direction of travel
-      if (lastNavLatLng) {
-        const headingDeg = computeBearing(
-          lastNavLatLng[0],
-          lastNavLatLng[1],
-          lat,
-          lng
-        );
+    // Bearing in degrees from point A to point B (0–360, 0 = north)
+    function computeBearing(lat1, lon1, lat2, lon2) {
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-        const el = navHeadingMarker.getElement();
-        if (el) {
-          const arrow = el.querySelector('.heading-marker-arrow');
-          if (arrow) {
-            arrow.style.transform = `rotate(${headingDeg}deg)`;
-          }
-        }
-      }
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x =
+        Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
 
-      lastNavLatLng = [lat, lng];
-
-      // Distance + HUD (same logic you already had)
-      const lastStop = routePoints[routePoints.length - 1];
-      if (lastStop) {
-        const dMeters = L.latLng(lat, lng).distanceTo(
-          L.latLng(lastStop[0], lastStop[1])
-        );
-        const dKm = dMeters / 1000;
-
-        let base = 'Navigation active.';
-        if (lastRouteSummary) {
-          base += ` Total route: ${lastRouteSummary.distanceKm.toFixed(
-            2
-          )} km (~${lastRouteSummary.durationMin.toFixed(1)} min).`;
-        }
-        base += ` Straight-line distance to final stop: ${dKm.toFixed(2)} km.`;
-        infoText.textContent = base;
-
-        if (navHud) {
-          let kmh = null;
-          if (
-            typeof position.coords.speed === 'number' &&
-            !Number.isNaN(position.coords.speed)
-          ) {
-            kmh = position.coords.speed * 3.6;
-          }
-
-          let hud = `To final: ${dKm.toFixed(1)} km`;
-
-          if (lastRouteSummary) {
-            const stopsCount =
-              typeof lastRouteSummary.stopsCount === 'number'
-                ? lastRouteSummary.stopsCount
-                : routePoints.length;
-
-            const stopsLabel =
-              stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
-
-            hud += ` • Trip: ${stopsLabel}, ` +
-              `${lastRouteSummary.distanceKm.toFixed(1)} km, ` +
-              `~${lastRouteSummary.durationMin.toFixed(0)} min`;
-          }
-
-          if (kmh !== null) {
-            hud += ` • Speed: ${kmh.toFixed(0)} km/h`;
-          }
-
-          navHud.textContent = hud;
-        }
-      }
-    },
-    (error) => {
-      console.error('Nav watch error:', error);
-      switch (error.code) {
-        case error.PERMISSION_DENIED:
-          infoText.textContent = 'Location access denied for navigation.';
-          break;
-        case error.POSITION_UNAVAILABLE:
-          infoText.textContent =
-            'Position unavailable; navigation cannot update.';
-          break;
-        case error.TIMEOUT:
-          infoText.textContent =
-            'Timeout while trying to update navigation position.';
-          break;
-        default:
-          infoText.textContent =
-            'Unknown error while updating navigation position.';
-      }
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 0
+      let θ = Math.atan2(y, x) * 180 / Math.PI;  // -180..+180
+      if (θ < 0) θ += 360;                        // 0..360
+      return θ;
     }
-  );
 
-  navHud.textContent = 'Navigation active...';
-}
+    function startNavigation() {
+      if (!navigator.geolocation) {
+        infoText.textContent =
+          'Geolocation is not supported by this device; cannot start navigation.';
+        return;
+      }
 
+      if (!routePoints.length) {
+        infoText.textContent =
+          'Create a route or trip first, then start navigation.';
+        return;
+      }
 
-   function stopNavigation() {
-  if (watchId !== null) {
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-  if (navHeadingMarker) {
-    map.removeLayer(navHeadingMarker);
-    navHeadingMarker = null;
-  }
-  lastNavLatLng = null;
-  infoText.textContent = 'Navigation stopped.';
-  navHud.textContent = 'Route loaded. Navigation not active.';
-}
+      if (watchId !== null) {
+        infoText.textContent = 'Navigation is already running.';
+        return;
+      }
 
+      infoText.textContent = 'Starting navigation...';
+
+      lastNavLatLng = null;
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const latlng = [lat, lng];
+
+          if (!navHeadingMarker) {
+            navHeadingMarker = L.marker(latlng, { icon: headingIcon }).addTo(map);
+          } else {
+            navHeadingMarker.setLatLng(latlng);
+          }
+
+          if (followMap) {
+            map.setView(latlng, map.getZoom() < 15 ? 15 : map.getZoom());
+          }
+
+          if (lastNavLatLng) {
+            const headingDeg = computeBearing(
+              lastNavLatLng[0],
+              lastNavLatLng[1],
+              lat,
+              lng
+            );
+
+            const el = navHeadingMarker.getElement();
+            if (el) {
+              const arrow = el.querySelector('.heading-marker-arrow');
+              if (arrow) {
+                arrow.style.transform = `rotate(${headingDeg}deg)`;
+              }
+            }
+          }
+
+          lastNavLatLng = [lat, lng];
+
+          const lastStop = routePoints[routePoints.length - 1];
+          if (lastStop) {
+            const dMeters = L.latLng(lat, lng).distanceTo(
+              L.latLng(lastStop[0], lastStop[1])
+            );
+            const dKm = dMeters / 1000;
+
+            let base = 'Navigation active.';
+            if (lastRouteSummary) {
+              base += ` Total route: ${lastRouteSummary.distanceKm.toFixed(
+                2
+              )} km (~${lastRouteSummary.durationMin.toFixed(1)} min).`;
+            }
+            base += ` Straight-line distance to final stop: ${dKm.toFixed(2)} km.`;
+            infoText.textContent = base;
+
+            if (navHud) {
+              let kmh = null;
+              if (
+                typeof position.coords.speed === 'number' &&
+                !Number.isNaN(position.coords.speed)
+              ) {
+                kmh = position.coords.speed * 3.6;
+              }
+
+              let hud = `To final: ${dKm.toFixed(1)} km`;
+
+              if (lastRouteSummary) {
+                const stopsCount =
+                  typeof lastRouteSummary.stopsCount === 'number'
+                    ? lastRouteSummary.stopsCount
+                    : routePoints.length;
+
+                const stopsLabel =
+                  stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
+
+                hud += ` • Trip: ${stopsLabel}, ` +
+                  `${lastRouteSummary.distanceKm.toFixed(1)} km, ` +
+                  `~${lastRouteSummary.durationMin.toFixed(0)} min`;
+              }
+
+              if (kmh !== null) {
+                hud += ` • Speed: ${kmh.toFixed(0)} km/h`;
+              }
+
+              navHud.textContent = hud;
+            }
+          }
+        },
+        (error) => {
+          console.error('Nav watch error:', error);
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              infoText.textContent = 'Location access denied for navigation.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              infoText.textContent =
+                'Position unavailable; navigation cannot update.';
+              break;
+            case error.TIMEOUT:
+              infoText.textContent =
+                'Timeout while trying to update navigation position.';
+              break;
+            default:
+              infoText.textContent =
+                'Unknown error while updating navigation position.';
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+
+      navHud.textContent = 'Navigation active...';
+    }
+
+    function stopNavigation() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (navHeadingMarker) {
+        map.removeLayer(navHeadingMarker);
+        navHeadingMarker = null;
+      }
+      lastNavLatLng = null;
+      infoText.textContent = 'Navigation stopped.';
+      navHud.textContent = 'Route loaded. Navigation not active.';
+    }
 
     btnStartNav.addEventListener('click', startNavigation);
     btnStopNav.addEventListener('click', stopNavigation);
-// Restore any last route from previous session
-restoreRouteFromStorage();
+
+    // ---- Restore last route (and HUD) from localStorage ----
+    function restoreRouteFromStorage() {
+      let savedPoints = null;
+      let savedSummary = null;
+      try {
+        const pointsRaw = localStorage.getItem(ROUTE_KEY);
+        if (pointsRaw) {
+          savedPoints = JSON.parse(pointsRaw);
+        }
+        const summaryRaw = localStorage.getItem(ROUTE_SUMMARY_KEY);
+        if (summaryRaw) {
+          savedSummary = JSON.parse(summaryRaw);
+        }
+      } catch (e) {
+        console.error('Error restoring route from storage', e);
+      }
+
+      if (!Array.isArray(savedPoints) || !savedPoints.length) {
+        navHud.textContent = 'No route active yet.';
+        return;
+      }
+
+      routePoints = [];
+      routeMarkers.forEach((m) => map.removeLayer(m));
+      routeMarkers = [];
+      if (roadRoutePolyline) {
+        map.removeLayer(roadRoutePolyline);
+        roadRoutePolyline = null;
+      }
+
+      savedPoints.forEach(([lat, lng]) => {
+        routePoints.push([lat, lng]);
+        const marker = L.circleMarker([lat, lng], { radius: 5 }).addTo(map);
+        routeMarkers.push(marker);
+      });
+
+      updateRoadRoute().catch((err) => console.error(err));
+
+      if (savedSummary && typeof savedSummary.distanceKm === 'number') {
+        lastRouteSummary = savedSummary;
+
+        const stopsCount = Array.isArray(savedPoints) ? savedPoints.length : 0;
+        const stopsLabel =
+          stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
+
+        navHud.textContent =
+          `Trip ready • ${stopsLabel} • ` +
+          `${savedSummary.distanceKm.toFixed(1)} km • ` +
+          `~${savedSummary.durationMin.toFixed(0)} min`;
+      } else {
+        navHud.textContent = 'Route restored. Distance will be recalculated.';
+      }
+    }
+
+    restoreRouteFromStorage();
 
     // ------------ Service worker registration ------------
     if ('serviceWorker' in navigator) {
@@ -2324,42 +2250,39 @@ restoreRouteFromStorage();
           });
       });
     }
-    // --- Layer visibility toggles from the legend UI ---
-const layerLegendEl = document.getElementById("layer-legend");
 
+    // --- Legend layer toggles ---
+    const layerLegendEl = document.getElementById("layer-legend");
 
+    if (layerLegendEl) {
+      const checkboxes = layerLegendEl.querySelectorAll(
+        'input[type="checkbox"][data-layer]'
+      );
 
-if (layerLegendEl) {
-  const checkboxes = layerLegendEl.querySelectorAll(
-    'input[type="checkbox"][data-layer]'
-  );
+      checkboxes.forEach((cb) => {
+        cb.addEventListener('change', (e) => {
+          const layerId = e.target.dataset.layer;
+          const checked = e.target.checked;
 
-  checkboxes.forEach((cb) => {
-    cb.addEventListener('change', (e) => {
-      const layerId = e.target.dataset.layer;
-      const checked = e.target.checked;
+          const layer = centreLayers[layerId];
+          if (!layer) return;
 
-      const layer = centreLayers[layerId];
-      if (!layer) return;
+          if (checked) {
+            layer.addTo(map);
+          } else {
+            map.removeLayer(layer);
+          }
+        });
+      });
+    }
 
-      if (checked) {
-        layer.addTo(map);
-      } else {
-        map.removeLayer(layer);
-      }
-    });
-  });
-}
+    const legendToggleBtn = document.getElementById("legend-toggle");
 
-// --- Collapsible behaviour for the legend chip ---
-const legendToggleBtn = document.getElementById("legend-toggle");
-
-if (legendToggleBtn && layerLegendEl) {
-  legendToggleBtn.addEventListener("click", () => {
-    layerLegendEl.classList.toggle("collapsed");
-  });
-}
-
+    if (legendToggleBtn && layerLegendEl) {
+      legendToggleBtn.addEventListener("click", () => {
+        layerLegendEl.classList.toggle("collapsed");
+      });
+    }
   </script>
 </body>
 </html>
