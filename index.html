@@ -19,16 +19,18 @@
 
   <style>
     :root {
-      --bg: #0f172a;
-      --card-bg: rgba(15, 23, 42, 0.94);
-      --card-border: rgba(148, 163, 184, 0.35);
-      --accent: #22c55e;
-      --accent-soft: rgba(34, 197, 94, 0.14);
-      --accent-strong: #16a34a;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
+      --bg: #f6f8fb;
+      --card-bg: rgba(255, 255, 255, 0.94);
+      --card-border: rgba(15, 23, 42, 0.08);
+      --accent: #2c7efb;
+      --accent-soft: rgba(44, 126, 251, 0.12);
+      --accent-strong: #1d4ed8;
+      --text: #0b1a33;
+      --muted: #4b5563;
       --danger: #ef4444;
-      --chip-bg: rgba(15, 23, 42, 0.8);
+      --chip-bg: rgba(255, 255, 255, 0.8);
+      --shadow-strong: 0 20px 60px rgba(15, 23, 42, 0.22);
+      --shadow-soft: 0 10px 30px rgba(15, 23, 42, 0.12);
     }
 
     * {
@@ -41,8 +43,8 @@
       padding: 0;
       height: 100%;
       width: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
+      font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
       background: var(--bg);
       color: var(--text);
       overflow: hidden;
@@ -61,38 +63,39 @@
     /* App header badge */
     #app-header {
       position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-      display: flex;
+      top: 12px;
+      left: 14px;
+      z-index: 6;
+      display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(148, 163, 184, 0.4);
+      gap: 10px;
+      padding: 8px 14px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--card-border);
       font-size: 13px;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
+      box-shadow: var(--shadow-soft);
     }
 
     #app-header-logo {
-      width: 22px;
-      height: 22px;
-      border-radius: 9px;
+      width: 28px;
+      height: 28px;
+      border-radius: 12px;
       background: radial-gradient(circle at 30% 30%, #22c55e, #0ea5e9);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
       color: #0b1120;
+      box-shadow: var(--shadow-soft);
     }
 
     #app-header-title {
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.03em;
+      color: var(--text);
     }
 
     .legend {
@@ -125,21 +128,21 @@
     /* Navigation HUD chip */
     #nav-hud {
       position: absolute;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: var(--chip-bg);
+      top: 14px;
+      right: 14px;
+      z-index: 6;
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: var(--card-bg);
       color: var(--muted);
       font-size: 12px;
       white-space: nowrap;
-      max-width: calc(100% - 24px);
+      max-width: min(60vw, 420px);
       overflow: hidden;
       text-overflow: ellipsis;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      backdrop-filter: blur(6px);
+      border: 1px solid var(--card-border);
+      backdrop-filter: blur(8px);
+      box-shadow: var(--shadow-soft);
     }
 
     /* Info text in bottom panel */
@@ -151,41 +154,40 @@
     /* Floating primary button (locate) */
     #fab-locate {
       position: absolute;
-      right: 12px;
-      bottom: 168px;
+      right: 14px;
+      bottom: 90px;
       z-index: 5;
-      width: 46px;
-      height: 46px;
-      border-radius: 999px;
-      border: none;
-      background: #0ea5e9;
-      color: #0b1120;
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
-      font-size: 22px;
+      box-shadow: var(--shadow-soft);
+      font-size: 20px;
       cursor: pointer;
     }
 
     /* Floating toggle for main panel */
     #fab-panel {
       position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 10px;
-      z-index: 5;
-      width: 54px;
-      height: 54px;
-      border-radius: 999px;
-      border: none;
-      background: var(--accent);
-      color: #022c22;
+      left: 14px;
+      bottom: 14px;
+      z-index: 6;
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
+      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.9);
-      font-size: 24px;
+      box-shadow: var(--shadow-soft);
+      font-size: 20px;
       cursor: pointer;
     }
 
@@ -193,35 +195,33 @@
       transform: translateY(-1px);
     }
 
-    /* Main control panel (bottom sheet) */
+    /* Main control panel (floating bottom-left sheet) */
     #control-panel {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 4;
-
-  padding: 10px 12px 14px;
-  background: var(--card-bg);
-  border-top-left-radius: 18px;
-  border-top-right-radius: 18px;
-  border-top: 1px solid var(--card-border);
-  box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.9);
-      transform: translateY(calc(100% - 56px));  /* only ~56px remains visible */
-      transition: transform 0.28s ease;
-     /* Layout */
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-
-  /* NEW: scrolling when open */
-  max-height: 65vh;                    /* panel never covers more than ~65% of screen height */
-  overflow-y: auto;                    /* show scrollbar when content is taller */
-  -webkit-overflow-scrolling: touch;   /* smooth scrolling on mobile */
-}
+      position: absolute;
+      left: 14px;
+      right: auto;
+      bottom: 70px;
+      z-index: 4;
+      width: min(460px, calc(100% - 28px));
+      padding: 12px 12px 16px;
+      background: var(--card-bg);
+      border-radius: 16px;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--shadow-strong);
+      transform: translateY(calc(100% - 60px));
+      transition: transform 0.28s ease, box-shadow 0.28s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 70vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      backdrop-filter: blur(10px);
+    }
 
     #control-panel.open {
       transform: translateY(0);
+      box-shadow: var(--shadow-strong);
     }
 
     #panel-top-row {
@@ -233,10 +233,13 @@
 
     #panel-title {
       font-size: 13px;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.04em;
       text-transform: uppercase;
       color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
     #panel-actions {
@@ -246,20 +249,21 @@
     }
 
     .pill-button {
-      padding: 4px 9px;
-      border-radius: 9px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.6);
+      padding: 5px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      background: var(--card-bg);
       color: var(--muted);
       font-size: 11px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 6px;
+      box-shadow: var(--shadow-soft);
     }
 
     .pill-button span.emoji {
-      font-size: 13px;
+      font-size: 14px;
     }
 
     .pill-button.primary {
@@ -269,9 +273,9 @@
     }
 
     .pill-button.danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: #fecaca;
-      border-color: rgba(239, 68, 68, 0.7);
+      background: rgba(239, 68, 68, 0.12);
+      color: #b91c1c;
+      border-color: rgba(239, 68, 68, 0.5);
     }
 /* Heading marker (your car) */
 .heading-marker {
@@ -298,13 +302,14 @@
 
     /* Sections inside panel */
     .panel-section {
-      border-radius: 12px;
-      padding: 8px 9px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--card-border);
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
+      box-shadow: var(--shadow-soft);
     }
 
     .section-header {
@@ -314,13 +319,14 @@
       gap: 8px;
       font-size: 12px;
       cursor: pointer;
+      color: var(--text);
     }
 
     .section-title {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-weight: 500;
+      gap: 8px;
+      font-weight: 600;
     }
 
     .section-title span.emoji {
@@ -335,7 +341,7 @@
     .section-body {
       margin-top: 4px;
       display: grid;
-      gap: 6px;
+      gap: 8px;
     }
 
     .section-body.collapsed {
@@ -348,11 +354,12 @@
     textarea {
       width: 100%;
       border-radius: 8px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      padding: 6px 8px;
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      padding: 8px 10px;
       font-size: 13px;
-      background: rgba(15, 23, 42, 0.9);
+      background: #fff;
       color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
     }
 
     textarea {
@@ -362,17 +369,18 @@
 
     /* Small buttons */
     .btn {
-      border-radius: 9px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: rgba(15, 23, 42, 0.9);
-      padding: 5px 9px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: #fff;
+      padding: 6px 10px;
       font-size: 11px;
-      color: var(--muted);
+      color: var(--text);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       white-space: nowrap;
+      box-shadow: var(--shadow-soft);
     }
 
     .btn.primary {
@@ -429,6 +437,64 @@
     .small-text {
       font-size: 11px;
       color: var(--muted);
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .segmented label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      background: #fff;
+      font-size: 11px;
+      cursor: pointer;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 12px;
+      background: var(--chip-bg);
+      border: 1px solid var(--card-border);
+      font-size: 12px;
+      color: var(--text);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .chip .tag {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 10px;
+    }
+
+    .muted-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.04);
+      color: var(--muted);
+      font-size: 11px;
     }
 
     /* Trip modal */
@@ -855,6 +921,37 @@
             </div>
           </div>
         </div>
+
+        <div class="folder-meta">
+          <label class="inline-label">Folder visibility & sharing</label>
+          <div class="segmented">
+            <label>
+              <input
+                type="radio"
+                name="folder-visibility"
+                value="private"
+                checked
+              />
+              <span>Private</span>
+            </label>
+            <label>
+              <input type="radio" name="folder-visibility" value="team" />
+              <span>Team</span>
+            </label>
+            <label>
+              <input type="radio" name="folder-visibility" value="public" />
+              <span>Public</span>
+            </label>
+          </div>
+          <div class="btn-row">
+            <button id="share-folder-btn" class="btn small" type="button">
+              <span class="btn-icon">🔗</span> Copy share link
+            </button>
+            <div id="folder-share-status" class="muted-pill">
+              Folder is private to you.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -879,6 +976,52 @@
         </div>
         <div class="small-text">
           In route mode, each tap adds a stop. Otherwise, taps just move a single marker.
+        </div>
+      </div>
+    </div>
+
+    <!-- LAYERS -->
+    <div class="panel-section">
+      <div class="section-header" data-section="layers">
+        <div class="section-title">
+          <span class="emoji">🧭</span>
+          <span>Layers & POIs</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="layers">
+        <div class="small-text">
+          These switches mirror the compact legend chip so you can collapse everything and keep the map clean.
+        </div>
+        <div class="two-col">
+          <label class="checkbox-row">
+            <input type="checkbox" data-layer-toggle="centres-day" checked />
+            <span>Day centres</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" data-layer-toggle="centres-medical" checked />
+            <span>Medical</span>
+          </label>
+        </div>
+        <div class="two-col">
+          <label class="checkbox-row">
+            <input type="checkbox" data-layer-toggle="centres-social" checked />
+            <span>Social / activities</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" data-layer-toggle="poi-parks" checked />
+            <span>Parks & open space</span>
+          </label>
+        </div>
+        <div class="two-col">
+          <label class="checkbox-row">
+            <input type="checkbox" data-layer-toggle="poi-food" checked />
+            <span>Food & cafés</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" data-layer-toggle="poi-participant" checked />
+            <span>Participant POIs</span>
+          </label>
         </div>
       </div>
     </div>
@@ -941,6 +1084,10 @@
         <div class="small-text">
           Import KML, KMZ, GPX, or GeoJSON files to show saved routes and points.
         </div>
+        <div>
+          <label class="inline-label" for="import-folder-select">Attach imports to folder</label>
+          <select id="import-folder-select"></select>
+        </div>
         <label for="file-input" class="inline-label">Select files to import</label>
         <input
           id="file-input"
@@ -953,6 +1100,24 @@
           <button id="clear-imports-btn" class="btn small" type="button">
             <span class="btn-icon">🗑</span> Clear imported layers
           </button>
+        </div>
+        <div class="chip-row" id="imported-list">
+          <span class="small-text">No imports yet.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="section-header" data-section="ideas">
+        <div class="section-title">
+          <span class="emoji">💡</span>
+          <span>Next steps</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="ideas">
+        <div class="small-text">
+          Consider adding lightweight sign-in so folder visibility can sync to teammates, plus export/sharing presets for public POI packs (e.g. toilets, fountains) and a history of imported files.
         </div>
       </div>
     </div>
@@ -1002,6 +1167,13 @@
     const infoText = document.getElementById('info-text');
     const navHud = document.getElementById('nav-hud');
 const notesTextarea = document.getElementById('notes-textarea');
+    const importFolderSelect = document.getElementById('import-folder-select');
+    const importedList = document.getElementById('imported-list');
+    const folderVisibilityRadios = document.querySelectorAll(
+      'input[name="folder-visibility"]'
+    );
+    const shareFolderBtn = document.getElementById('share-folder-btn');
+    const folderShareStatus = document.getElementById('folder-share-status');
 
     panelToggleBtn.addEventListener('click', () => {
       const isOpen = controlPanel.classList.toggle('open');
@@ -1026,8 +1198,8 @@ const notesTextarea = document.getElementById('notes-textarea');
       });
     });
 
-    // Default: collapse import section and notes slightly, keep search open
-    ['import'].forEach((sec) => {
+    // Default: collapse lower-traffic sections so the map stays dominant
+    ['import', 'ideas'].forEach((sec) => {
       const body = document.querySelector(
         `.section-body[data-section-body="${sec}"]`
       );
@@ -1122,6 +1294,7 @@ notesTextarea.addEventListener('input', () => {
 });
 
 loadNotes();
+renderImportedList();
 
     // ------------ Map + core logic (adapted from previous versions) ------------
     const map = L.map('map').setView([-34.9285, 138.6007], 12);
@@ -1591,13 +1764,23 @@ function saveRouteToStorage() {
     let favouriteFolders = [];
     let currentFolderIndex = 0;
 
+    function ensureFolderDefaults(folder) {
+      if (!folder.visibility) folder.visibility = 'private';
+      if (!folder.shareCode) {
+        folder.shareCode =
+          'fld-' + Math.random().toString(36).slice(2, 7).toUpperCase();
+      }
+    }
+
     function defaultFolders() {
       favouriteFolders = [
         {
           name: 'Default',
-          items: []
+          items: [],
+          visibility: 'private'
         }
       ];
+      ensureFolderDefaults(favouriteFolders[0]);
       currentFolderIndex = 0;
     }
 
@@ -1638,10 +1821,13 @@ function saveRouteToStorage() {
         defaultFolders();
       }
 
+      favouriteFolders.forEach(ensureFolderDefaults);
       currentFolderIndex = 0;
       refreshFolderSelect();
       refreshTargetFolderSelect();
       refreshFavouritesSelect();
+      refreshImportFolderSelect();
+      updateFolderShareUI();
     }
 
     function saveFavourites() {
@@ -1663,7 +1849,9 @@ function saveRouteToStorage() {
       ) {
         currentFolderIndex = 0;
       }
-      return favouriteFolders[currentFolderIndex];
+      const folder = favouriteFolders[currentFolderIndex];
+      ensureFolderDefaults(folder);
+      return folder;
     }
 
     function refreshFolderSelect() {
@@ -1686,6 +1874,34 @@ function saveRouteToStorage() {
         favTargetFolderSelect.appendChild(opt);
       });
       favTargetFolderSelect.value = String(currentFolderIndex);
+    }
+
+    function refreshImportFolderSelect() {
+      if (!importFolderSelect) return;
+      importFolderSelect.innerHTML = '';
+      favouriteFolders.forEach((folder, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = folder.name;
+        importFolderSelect.appendChild(opt);
+      });
+      importFolderSelect.value = String(currentFolderIndex);
+    }
+
+    function updateFolderShareUI() {
+      const folder = getCurrentFolder();
+      ensureFolderDefaults(folder);
+      folderVisibilityRadios.forEach((radio) => {
+        radio.checked = radio.value === folder.visibility;
+      });
+
+      let status = 'Folder is private to you.';
+      if (folder.visibility === 'team') {
+        status = 'Shared with teammates you pass the link to.';
+      } else if (folder.visibility === 'public') {
+        status = 'Public link ready to share widely.';
+      }
+      if (folderShareStatus) folderShareStatus.textContent = status;
     }
 
     function refreshFavouritesSelect() {
@@ -1718,12 +1934,16 @@ function saveRouteToStorage() {
         return;
       }
 
-      favouriteFolders.push({ name, items: [] });
+      const newFolder = { name, items: [], visibility: 'private' };
+      ensureFolderDefaults(newFolder);
+      favouriteFolders.push(newFolder);
       currentFolderIndex = favouriteFolders.length - 1;
       saveFavourites();
       refreshFolderSelect();
       refreshTargetFolderSelect();
       refreshFavouritesSelect();
+      refreshImportFolderSelect();
+      updateFolderShareUI();
 
       infoText.textContent = `Folder "${name}" created.`;
     });
@@ -1737,6 +1957,38 @@ function saveRouteToStorage() {
       }
       refreshFavouritesSelect();
       refreshTargetFolderSelect();
+      refreshImportFolderSelect();
+      updateFolderShareUI();
+    });
+
+    folderVisibilityRadios.forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        if (!e.target.checked) return;
+        const folder = getCurrentFolder();
+        folder.visibility = e.target.value;
+        ensureFolderDefaults(folder);
+        saveFavourites();
+        updateFolderShareUI();
+      });
+    });
+
+    shareFolderBtn.addEventListener('click', async () => {
+      const folder = getCurrentFolder();
+      ensureFolderDefaults(folder);
+      const shareLink =
+        window.location.origin +
+        window.location.pathname +
+        '#' +
+        encodeURIComponent(folder.shareCode);
+
+      try {
+        await navigator.clipboard.writeText(shareLink);
+        folderShareStatus.textContent = `Share link copied for "${folder.name}".`;
+      } catch (err) {
+        console.warn('Clipboard copy failed, falling back to prompt', err);
+        prompt('Copy this link', shareLink);
+        folderShareStatus.textContent = 'Copy the shown link to share.';
+      }
     });
 
     saveFavouriteBtn.addEventListener('click', () => {
@@ -1983,11 +2235,41 @@ function saveRouteToStorage() {
     const clearImportsBtn = document.getElementById('clear-imports-btn');
     let importedLayers = [];
 
+    function renderImportedList() {
+      if (!importedList) return;
+      importedList.innerHTML = '';
+
+      if (!importedLayers.length) {
+        const empty = document.createElement('span');
+        empty.className = 'small-text';
+        empty.textContent = 'No imports yet.';
+        importedList.appendChild(empty);
+        return;
+      }
+
+      importedLayers.forEach((entry) => {
+        const chip = document.createElement('div');
+        chip.className = 'chip';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = entry.name;
+        const tag = document.createElement('span');
+        tag.className = 'tag';
+        tag.textContent = entry.folderName || 'Unfiled';
+        chip.appendChild(nameSpan);
+        chip.appendChild(tag);
+        importedList.appendChild(chip);
+      });
+    }
+
     fileInput.addEventListener('change', async (event) => {
       const files = Array.from(event.target.files || []);
       if (!files.length) return;
 
       let overallBounds = null;
+      const folderIdx = Number(importFolderSelect?.value);
+      const folderName =
+        favouriteFolders[!Number.isNaN(folderIdx) ? folderIdx : currentFolderIndex]
+          ?.name || 'Unfiled';
 
       for (const file of files) {
         const name = file.name;
@@ -2050,7 +2332,7 @@ function saveRouteToStorage() {
             }
           }).addTo(map);
 
-          importedLayers.push(layer);
+          importedLayers.push({ layer, name, folderName });
 
           try {
             const layerBounds = layer.getBounds();
@@ -2081,12 +2363,14 @@ function saveRouteToStorage() {
       }
 
       fileInput.value = '';
+      renderImportedList();
     });
 
     clearImportsBtn.addEventListener('click', () => {
-      importedLayers.forEach((layer) => map.removeLayer(layer));
+      importedLayers.forEach(({ layer }) => map.removeLayer(layer));
       importedLayers = [];
       infoText.textContent = 'Imported layers cleared.';
+      renderImportedList();
     });
 
     // ------------ Live navigation (watchPosition) ------------
@@ -2323,10 +2607,29 @@ restoreRouteFromStorage();
           });
       });
     }
-    // --- Layer visibility toggles from the legend UI ---
+// --- Layer visibility toggles from the legend UI and in-panel switches ---
 const layerLegendEl = document.getElementById("layer-legend");
 
+function setLayerVisibility(layerId, checked) {
+  const layer = centreLayers[layerId];
+  if (layer) {
+    if (checked) {
+      layer.addTo(map);
+    } else {
+      map.removeLayer(layer);
+    }
+  }
 
+  const legendToggle = layerLegendEl?.querySelector(
+    `input[type="checkbox"][data-layer="${layerId}"]`
+  );
+  if (legendToggle) legendToggle.checked = checked;
+
+  const panelToggle = document.querySelector(
+    `input[data-layer-toggle="${layerId}"]`
+  );
+  if (panelToggle) panelToggle.checked = checked;
+}
 
 if (layerLegendEl) {
   const checkboxes = layerLegendEl.querySelectorAll(
@@ -2337,18 +2640,20 @@ if (layerLegendEl) {
     cb.addEventListener('change', (e) => {
       const layerId = e.target.dataset.layer;
       const checked = e.target.checked;
-
-      const layer = centreLayers[layerId];
-      if (!layer) return;
-
-      if (checked) {
-        layer.addTo(map);
-      } else {
-        map.removeLayer(layer);
-      }
+      setLayerVisibility(layerId, checked);
     });
   });
 }
+
+document.querySelectorAll('input[data-layer-toggle]').forEach((cb) => {
+  cb.addEventListener('change', (e) => {
+    const layerId = e.target.dataset.layerToggle;
+    setLayerVisibility(layerId, e.target.checked);
+  });
+  if (cb.checked) {
+    setLayerVisibility(cb.dataset.layerToggle, true);
+  }
+});
 
 // --- Collapsible behaviour for the legend chip ---
 const legendToggleBtn = document.getElementById("legend-toggle");
