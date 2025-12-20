@@ -35,9 +35,18 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Cache-first for app shell; network for everything else
+// Cache-first for app shell; network for everything else with offline fallback.
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+
+  // Always serve the app shell for navigation requests so the UI renders
+  // instead of a server "Not Found" response when offline or misrouted.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('./index.html').then((cached) => cached || fetch(request))
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(request).then((cached) => {
