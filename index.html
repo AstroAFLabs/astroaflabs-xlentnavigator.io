@@ -1265,6 +1265,32 @@ textarea {
 
     let clickMarker = null;
     let userLocationMarker = null;
+// --- POI layers (parks, food, participant places) ---
+const POI_STORAGE_KEY = 'osmRoutePoiLayers';
+
+const POI_DEFS = {
+  'poi-parks': {
+    id: 'poi-parks',
+    name: 'Parks',
+    color: '#22c55e',
+    emoji: '🌳'
+  },
+  'poi-food': {
+    id: 'poi-food',
+    name: 'Food / cafés',
+    color: '#f97316',
+    emoji: '🍔'
+  },
+  'poi-participant': {
+    id: 'poi-participant',
+    name: 'Participant places',
+    color: '#a855f7',
+    emoji: '🏠'
+  }
+};
+
+// poiLayers[layerId] = { id, name, color, items: [{lat,lng,label}], layer: L.LayerGroup }
+let poiLayers = {};
 
     // ------------ Locate Me – hook both main button + small button ------------
     const locateBtn = document.getElementById('locate-btn');
