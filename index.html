@@ -921,7 +921,43 @@ textarea {
         </div>
       </div>
     </div>
+<!-- PLACES & LAYERS (POI) -->
+    <div class="panel-section">
+      <div class="section-header" data-section="poi">
+        <div class="section-title">
+          <span class="emoji">📍</span>
+          <span>Places & layers</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="poi">
+        <div class="two-col">
+          <div>
+            <label class="inline-label" for="poi-layer-select">Active layer</label>
+            <select id="poi-layer-select"></select>
+          </div>
+          <div class="small-text">
+            Use layers for parks, food, participant places, etc.  
+            Add from your last tap or search, and toggle via the Layers chip.
+          </div>
+        </div>
 
+        <div class="btn-row">
+          <button id="poi-add-from-tap-btn" class="btn small" type="button">
+            <span class="btn-icon">👆</span> Add from last tap
+          </button>
+          <button id="poi-add-from-search-btn" class="btn small" type="button">
+            <span class="btn-icon">🔎</span> Add from search
+          </button>
+        </div>
+
+        <div class="btn-row">
+          <button id="poi-clear-layer-btn" class="btn small danger" type="button">
+            <span class="btn-icon">🧹</span> Clear this layer
+          </button>
+        </div>
+      </div>
+    </div>
     <!-- TRIP -->
     <div class="panel-section">
       <div class="section-header" data-section="trip">
