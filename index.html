@@ -168,64 +168,84 @@ body {
 }
 
 /* Floating toggle for main panel */
+/* Floating toggle for main panel – right edge */
 #fab-panel {
   position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  z-index: 6;
-  width: 40px;
-  height: 80px;
-  border-radius: 20px 0 0 20px;
+  right: 12px;
+  bottom: 50%;
+  transform: translateY(50%);
+  z-index: 5;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
   border: none;
   background: var(--accent);
   color: #022c22;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.9);
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
   font-size: 22px;
   cursor: pointer;
 }
 
 #fab-panel span {
-  transform: rotate(90deg);
+  transform: translateY(-1px);
 }
 
-
-/* Main control panel (bottom sheet / card) */
-/* Main control panel – right side drawer */
+/* Main control panel – RIGHT SIDE SHEET, not bottom */
 #control-panel {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
   z-index: 4;
 
-  width: min(360px, 80%);
+  width: min(360px, 88vw);
+
   padding: 10px 12px 14px;
-
   background: var(--card-bg);
-  border-left: 1px solid var(--card-border);
-  box-shadow: -10px 0 30px rgba(15, 23, 42, 0.9);
+  border-radius: 18px;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
 
-  /* Start mostly hidden: leave ~48px visible as a “grip” */
-  transform: translateX(calc(100% - 48px));
+  /* Slide in/out horizontally */
+  transform: translateX(110%);        /* hidden off the right edge by default */
   transition: transform 0.28s ease;
 
+  /* Layout */
   display: flex;
   flex-direction: column;
   gap: 8px;
 
-  max-height: 100vh;
+  /* Scrollable content, full height */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* When open, fully slide in */
+/* When open, bring the panel fully into view */
 #control-panel.open {
   transform: translateX(0);
 }
+
+/* Mobile tweaks – slightly narrower & less tall */
+@media (max-width: 768px) {
+  #control-panel {
+    width: min(330px, 92vw);
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 8px 10px 12px;
+  }
+
+  #fab-panel {
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+}
+
 
 
 #panel-top-row {
