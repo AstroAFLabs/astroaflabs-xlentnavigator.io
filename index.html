@@ -1341,191 +1341,205 @@ textarea {
     });
 
     // ------------ Route building with OSRM ------------
-    const routeModeCheckbox = document.getElementById('route-mode-checkbox');
-    const clearRouteBtn = document.getElementById('clear-route-btn');
+ // ------------ Route building with OSRM ------------
+const routeModeCheckbox = document.getElementById('route-mode-checkbox');
+const clearRouteBtn = document.getElementById('clear-route-btn');
 
-    let routeMode = false;
-    const ROUTE_KEY = 'osmRouteLastRoute';
-    const ROUTE_SUMMARY_KEY = 'osmRouteLastRouteSummary';
+let routeMode = false;
 
-    let routePoints = [];
-    let routeMarkers = [];
-    let roadRoutePolyline = null;
-    let lastRouteSummary = null;
+// Keys for persisting the last route in localStorage
+const ROUTE_KEY = 'osmRouteLastRoute';
+const ROUTE_SUMMARY_KEY = 'osmRouteLastRouteSummary';
 
-    function saveRouteToStorage() {
-      try {
-        localStorage.setItem(ROUTE_KEY, JSON.stringify(routePoints));
-        if (lastRouteSummary) {
-          localStorage.setItem(
-            ROUTE_SUMMARY_KEY,
-            JSON.stringify(lastRouteSummary)
-          );
-        } else {
-          localStorage.removeItem(ROUTE_SUMMARY_KEY);
-        }
-      } catch (e) {
-        console.error('Error saving route', e);
-      }
+// Route state
+let routePoints = [];        // [ [lat, lng], ... ]
+let routeMarkers = [];       // Leaflet circleMarkers for each waypoint
+let roadRoutePolyline = null;
+let lastRouteSummary = null; // { distanceKm, durationMin, stopsCount }
+
+// Save route + summary for next launch
+function saveRouteToStorage() {
+  try {
+    localStorage.setItem(ROUTE_KEY, JSON.stringify(routePoints));
+    if (lastRouteSummary) {
+      localStorage.setItem(
+        ROUTE_SUMMARY_KEY,
+        JSON.stringify(lastRouteSummary)
+      );
+    } else {
+      localStorage.removeItem(ROUTE_SUMMARY_KEY);
+    }
+  } catch (e) {
+    console.error('Error saving route', e);
+  }
+}
+
+routeModeCheckbox.addEventListener('change', (e) => {
+  routeMode = e.target.checked;
+  if (routeMode) {
+    infoText.textContent =
+      'Route mode ON: tap the map to add waypoints in order.';
+  } else {
+    infoText.textContent =
+      'Route mode OFF: taps just move a single marker instead.';
+  }
+});
+
+// Clear route in memory, on map, and in storage
+function clearRouteOnly() {
+  routePoints = [];
+
+  if (roadRoutePolyline) {
+    map.removeLayer(roadRoutePolyline);
+    roadRoutePolyline = null;
+  }
+
+  routeMarkers.forEach((m) => map.removeLayer(m));
+  routeMarkers = [];
+
+  lastRouteSummary = null;
+  navHud.textContent = 'No route active.';
+
+  try {
+    localStorage.removeItem(ROUTE_KEY);
+    localStorage.removeItem(ROUTE_SUMMARY_KEY);
+  } catch (e) {
+    console.error('Error clearing route from storage', e);
+  }
+}
+
+clearRouteBtn.addEventListener('click', () => {
+  clearRouteOnly();
+  infoText.textContent = 'Route cleared.';
+});
+
+// Fetch OSRM road route whenever routePoints changes
+async function updateRoadRoute() {
+  if (routePoints.length < 2) {
+    if (roadRoutePolyline) {
+      map.removeLayer(roadRoutePolyline);
+      roadRoutePolyline = null;
+    }
+    lastRouteSummary = null;
+    navHud.textContent = 'Need at least 2 stops for a route.';
+    return;
+  }
+
+  try {
+    // OSRM expects lon,lat;lon,lat;...
+    const coordString = routePoints
+      .map(([lat, lng]) => `${lng},${lat}`)
+      .join(';');
+
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('OSRM request failed');
     }
 
-    routeModeCheckbox.addEventListener('change', (e) => {
-      routeMode = e.target.checked;
-      if (routeMode) {
-        infoText.textContent =
-          'Route mode ON: tap the map to add waypoints in order.';
-      } else {
-        infoText.textContent =
-          'Route mode OFF: taps move a single marker instead.';
-      }
-    });
-
-    function clearRouteOnly() {
-      routePoints = [];
-      if (roadRoutePolyline) {
-        map.removeLayer(roadRoutePolyline);
-        roadRoutePolyline = null;
-      }
-      routeMarkers.forEach((m) => map.removeLayer(m));
-      routeMarkers = [];
-      lastRouteSummary = null;
-      navHud.textContent = 'No route active.';
-
-      try {
-        localStorage.removeItem(ROUTE_KEY);
-        localStorage.removeItem(ROUTE_SUMMARY_KEY);
-      } catch (e) {
-        console.error('Error clearing route from storage', e);
-      }
+    const data = await response.json();
+    if (data.code !== 'Ok' || !data.routes || !data.routes.length) {
+      infoText.textContent = 'No road route found between these points.';
+      return;
     }
 
-    clearRouteBtn.addEventListener('click', () => {
-      clearRouteOnly();
-      infoText.textContent = 'Route cleared.';
-    });
+    const route = data.routes[0];
+    const distanceKm = route.distance / 1000;
+    const durationMin = route.duration / 60;
 
-    async function updateRoadRoute() {
-      if (routePoints.length < 2) {
-        if (roadRoutePolyline) {
-          map.removeLayer(roadRoutePolyline);
-          roadRoutePolyline = null;
-        }
-        lastRouteSummary = null;
-        navHud.textContent = 'Need at least 2 stops for a route.';
-        return;
-      }
+    // Convert OSRM [lon, lat] to Leaflet [lat, lon]
+    const coords = route.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
 
-      try {
-        const coordString = routePoints
-          .map(([lat, lng]) => `${lng},${lat}`)
-          .join(';');
-
-        const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error('OSRM request failed');
-        }
-
-        const data = await response.json();
-        if (data.code !== 'Ok' || !data.routes || !data.routes.length) {
-          infoText.textContent = 'No road route found between these points.';
-          return;
-        }
-
-        const route = data.routes[0];
-        const distanceKm = route.distance / 1000;
-        const durationMin = route.duration / 60;
-
-        const coords = route.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
-
-        if (!roadRoutePolyline) {
-          roadRoutePolyline = L.polyline(coords, { weight: 5 }).addTo(map);
-        } else {
-          roadRoutePolyline.setLatLngs(coords);
-        }
-
-        const stopsCount = routePoints.length;
-
-        lastRouteSummary = {
-          distanceKm,
-          durationMin,
-          stopsCount
-        };
-
-        saveRouteToStorage();
-
-        const stopsLabel =
-          stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
-
-        infoText.textContent =
-          `Route: ${stopsLabel}, ` +
-          `${distanceKm.toFixed(2)} km, ~${durationMin.toFixed(1)} min.`;
-
-        navHud.textContent =
-          `Trip ready • ${stopsLabel} • ` +
-          `${distanceKm.toFixed(1)} km • ~${durationMin.toFixed(0)} min`;
-      } catch (err) {
-        console.error(err);
-        infoText.textContent = 'Error fetching road route. Try again later.';
-        navHud.textContent = 'Error: route service unavailable.';
-      }
+    if (!roadRoutePolyline) {
+      roadRoutePolyline = L.polyline(coords, { weight: 5 }).addTo(map);
+    } else {
+      roadRoutePolyline.setLatLngs(coords);
     }
 
-    function addWaypoint(lat, lng, sourceLabel) {
-      routePoints.push([lat, lng]);
+    const stopsCount = routePoints.length;
+    lastRouteSummary = {
+      distanceKm,
+      durationMin,
+      stopsCount
+    };
 
-      const waypointMarker = L.circleMarker([lat, lng], {
-        radius: 5
-      }).addTo(map);
-      routeMarkers.push(waypointMarker);
+    // Persist for next session
+    saveRouteToStorage();
 
-      const label = sourceLabel ? ` (${sourceLabel})` : '';
+    const stopsLabel = stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
 
-      updateRoadRoute().catch((err) => console.error(err));
+    infoText.textContent =
+      `Route: ${stopsLabel}, ` +
+      `${distanceKm.toFixed(2)} km, ~${durationMin.toFixed(1)} min.`;
 
-      infoText.textContent =
-        `Route points: ${routePoints.length}${label}. Last point at ` +
-        `lat ${lat.toFixed(5)}, lon ${lng.toFixed(5)}.`;
+    navHud.textContent =
+      `Trip ready • ${stopsLabel} • ` +
+      `${distanceKm.toFixed(1)} km • ~${durationMin.toFixed(0)} min`;
+  } catch (err) {
+    console.error(err);
+    infoText.textContent = 'Error fetching road route. Try again later.';
+    navHud.textContent = 'Error: route service unavailable.';
+  }
+}
+
+// Helper: add a waypoint and refresh the route
+function addWaypoint(lat, lng, sourceLabel) {
+  routePoints.push([lat, lng]);
+
+  const waypointMarker = L.circleMarker([lat, lng], {
+    radius: 5
+  }).addTo(map);
+  routeMarkers.push(waypointMarker);
+
+  const label = sourceLabel ? ` (${sourceLabel})` : '';
+
+  updateRoadRoute().catch((err) => console.error(err));
+
+  infoText.textContent =
+    `Route points: ${routePoints.length}${label}. Last point at ` +
+    `lat ${lat.toFixed(5)}, lon ${lng.toFixed(5)}.`;
+}
+
+// Map click: either add waypoint (route mode) or move single marker
+map.on('click', (e) => {
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
+
+  if (routeMode) {
+    addWaypoint(lat, lng, 'map tap');
+  } else {
+    infoText.textContent =
+      `Last tap: latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}`;
+
+    if (!clickMarker) {
+      clickMarker = L.marker(e.latlng).addTo(map);
+    } else {
+      clickMarker.setLatLng(e.latlng);
     }
 
-    map.on('click', function (e) {
-      const lat = e.latlng.lat;
-      const lng = e.latlng.lng;
+    clickMarker
+      .bindPopup(
+        `<b>Tapped location</b><br>Lat: ${lat.toFixed(
+          5
+        )}<br>Lng: ${lng.toFixed(5)}`
+      )
+      .openPopup();
+  }
+});
 
-      if (routeMode) {
-        addWaypoint(lat, lng, 'map tap');
-      } else {
-        infoText.textContent =
-          `Last tap: latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}`;
+// Add last search result as a waypoint
+addSearchWaypointBtn.addEventListener('click', () => {
+  if (!lastSearchLatLng) {
+    infoText.textContent =
+      'There is no recent search result to add as a waypoint.';
+    return;
+  }
 
-        if (!clickMarker) {
-          clickMarker = L.marker(e.latlng).addTo(map);
-        } else {
-          clickMarker.setLatLng(e.latlng);
-        }
+  const [lat, lng] = lastSearchLatLng;
+  addWaypoint(lat, lng, 'search result');
+});
 
-        clickMarker
-          .bindPopup(
-            `<b>Tapped location</b><br>Lat: ${lat.toFixed(
-              5
-            )}<br>Lng: ${lng.toFixed(5)}`
-          )
-          .openPopup();
-      }
-    });
-
-    // Add last search result as waypoint
-    addSearchWaypointBtn.addEventListener('click', () => {
-      if (!lastSearchLatLng) {
-        infoText.textContent =
-          'There is no recent search result to add as a waypoint.';
-        return;
-      }
-
-      const [lat, lng] = lastSearchLatLng;
-      addWaypoint(lat, lng, 'search result');
-    });
 
     // ------------ Folders + favourites in localStorage ------------
     const favFolderSelect = document.getElementById('fav-folder-select');
