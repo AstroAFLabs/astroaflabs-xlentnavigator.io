@@ -1090,6 +1090,8 @@ textarea {
     const infoText = document.getElementById('info-text');
     const navHud = document.getElementById('nav-hud');
     const notesTextarea = document.getElementById('notes-textarea');
+let lastTapLatLng = null;     // [lat, lng] of last map tap
+let lastTapLabel = null;      // optional description
 
     panelToggleBtn.addEventListener('click', () => {
       const isOpen = controlPanel.classList.toggle('open');
