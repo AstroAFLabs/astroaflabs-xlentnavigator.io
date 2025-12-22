@@ -1266,31 +1266,244 @@ textarea {
     let clickMarker = null;
     let userLocationMarker = null;
 // --- POI layers (parks, food, participant places) ---
+// --- POI layers (parks, food, participant places, plus custom) ---
 const POI_STORAGE_KEY = 'osmRoutePoiLayers';
 
-const POI_DEFS = {
+// Built-in defaults – always available; user can add more layers on top
+const POI_DEFAULTS = {
   'poi-parks': {
     id: 'poi-parks',
     name: 'Parks',
     color: '#22c55e',
-    emoji: '🌳'
+    emoji: '🌳',
+    isBuiltin: true
   },
   'poi-food': {
     id: 'poi-food',
     name: 'Food / cafés',
     color: '#f97316',
-    emoji: '🍔'
+    emoji: '🍔',
+    isBuiltin: true
   },
   'poi-participant': {
     id: 'poi-participant',
     name: 'Participant places',
     color: '#a855f7',
-    emoji: '🏠'
+    emoji: '🏠',
+    isBuiltin: true
   }
 };
 
-// poiLayers[layerId] = { id, name, color, items: [{lat,lng,label}], layer: L.LayerGroup }
+// poiLayers[layerId] = { id, name, color, emoji, isBuiltin, items: [{lat,lng,label}], layer: L.LayerGroup }
 let poiLayers = {};
+
+function createPoiMarker(layerId, item) {
+  const entry = poiLayers[layerId];
+  if (!entry) return null;
+
+  const color = entry.color || '#38bdf8';
+
+  const marker = L.circleMarker([item.lat, item.lng], {
+    radius: 6,
+    color,
+    fillColor: color,
+    fillOpacity: 1,
+    weight: 1.5
+  });
+
+  const label = item.label || entry.name;
+  marker.bindPopup(
+    `<b>${label}</b><br>` +
+    `<span style="color:#6b7280;font-size:11px;">${entry.name}</span>`
+  );
+
+  return marker;
+}
+
+function savePoiLayers() {
+  try {
+    const data = {};
+    Object.keys(poiLayers).forEach((id) => {
+      const entry = poiLayers[id];
+      data[id] = {
+        name: entry.name,
+        color: entry.color,
+        emoji: entry.emoji,
+        isBuiltin: !!entry.isBuiltin,
+        items: entry.items || []
+      };
+    });
+    localStorage.setItem(POI_STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.error('Error saving POI layers', e);
+  }
+}
+
+function loadPoiLayers() {
+  try {
+    const raw = localStorage.getItem(POI_STORAGE_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Error loading POI layers', e);
+    return {};
+  }
+}
+
+function refreshPoiLayerSelect(selectedId) {
+  const poiLayerSelect = document.getElementById('poi-layer-select');
+  if (!poiLayerSelect) return;
+
+  poiLayerSelect.innerHTML = '';
+
+  // Simple alphabetical ordering by name
+  const entries = Object.values(poiLayers).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+
+  entries.forEach((entry) => {
+    const opt = document.createElement('option');
+    opt.value = entry.id;
+    opt.textContent = entry.name;
+    poiLayerSelect.appendChild(opt);
+  });
+
+  if (selectedId && poiLayers[selectedId]) {
+    poiLayerSelect.value = selectedId;
+  }
+}
+
+function initPoiLayers() {
+  const stored = loadPoiLayers();
+
+  // Merge defaults + stored (stored can add new layers or override names/colours)
+  const allIds = new Set([
+    ...Object.keys(POI_DEFAULTS),
+    ...Object.keys(stored)
+  ]);
+
+  allIds.forEach((id) => {
+    const def = POI_DEFAULTS[id] || {};
+    const persisted = stored[id] || {};
+
+    const entry = {
+      id,
+      name: persisted.name || def.name || id,
+      color: persisted.color || def.color || '#38bdf8',
+      emoji: persisted.emoji || def.emoji || '📍',
+      isBuiltin: def.isBuiltin || persisted.isBuiltin || false,
+      items: Array.isArray(persisted.items) ? persisted.items : [],
+      layer: L.layerGroup().addTo(map)
+    };
+
+    entry.items.forEach((item) => {
+      const m = createPoiMarker(id, item);
+      if (m) entry.layer.addLayer(m);
+    });
+
+    poiLayers[id] = entry;
+  });
+
+  refreshPoiLayerSelect();
+}
+
+function setPoiLayerVisible(layerId, visible) {
+  const entry = poiLayers[layerId];
+  if (!entry || !entry.layer) return;
+  if (visible) {
+    entry.layer.addTo(map);
+  } else {
+    map.removeLayer(entry.layer);
+  }
+}
+
+function addPoiToLayer(layerId, lat, lng, label) {
+  const poiLayerSelect = document.getElementById('poi-layer-select');
+const poiAddFromTapBtn = document.getElementById('poi-add-from-tap-btn');
+const poiAddFromSearchBtn = document.getElementById('poi-add-from-search-btn');
+const poiClearLayerBtn = document.getElementById('poi-clear-layer-btn');
+const poiNewLayerBtn = document.getElementById('poi-new-layer-btn');
+const poiDeleteLayerBtn = document.getElementById('poi-delete-layer-btn');
+
+poiNewLayerBtn.addEventListener('click', () => {
+  let name = (prompt('Name for the new layer (e.g. Beaches, Doctors, Toilets):') || '').trim();
+  if (!name) return;
+
+  let color = (prompt('Colour for this layer (any CSS colour, e.g. #0ea5e9 or orange):', '#0ea5e9') || '').trim();
+  if (!color) color = '#0ea5e9';
+
+  // Build a reasonably unique id based on name
+  const baseSlug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'custom';
+
+  let id = 'poi-' + baseSlug;
+  let counter = 1;
+  while (poiLayers[id]) {
+    id = `poi-${baseSlug}-${counter++}`;
+  }
+
+  const entry = {
+    id,
+    name,
+    color,
+    emoji: '📍',
+    isBuiltin: false,
+    items: [],
+    layer: L.layerGroup().addTo(map)
+  };
+
+  poiLayers[id] = entry;
+  savePoiLayers();
+  refreshPoiLayerSelect(id);
+
+  infoText.textContent = `New layer created: "${name}".`;
+});
+
+poiDeleteLayerBtn.addEventListener('click', () => {
+  const id = getActivePoiLayerId();
+  const entry = poiLayers[id];
+  if (!entry) return;
+
+  if (entry.isBuiltin) {
+    alert('Built-in layers (Parks, Food, Participant places) cannot be removed – only cleared.');
+    return;
+  }
+
+  const ok = confirm(`Remove layer "${entry.name}" and all its places?`);
+  if (!ok) return;
+
+  // Remove markers from the map
+  if (entry.layer) {
+    entry.layer.clearLayers();
+    map.removeLayer(entry.layer);
+  }
+
+  delete poiLayers[id];
+  savePoiLayers();
+  refreshPoiLayerSelect();
+
+  infoText.textContent = `Layer "${entry.name}" removed.`;
+});
+
+  const entry = poiLayers[layerId];
+  if (!entry) return;
+
+  const item = { lat, lng, label: label || '' };
+  entry.items.push(item);
+
+  const marker = createPoiMarker(layerId, item);
+  if (marker) {
+    entry.layer.addLayer(marker);
+  }
+
+  savePoiLayers();
+}
+function getActivePoiLayerId() {
+  return (poiLayerSelect && poiLayerSelect.value) || 'poi-participant';
+}
+
 
     // ------------ Locate Me – hook both main button + small button ------------
     const locateBtn = document.getElementById('locate-btn');
