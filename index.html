@@ -1087,8 +1087,7 @@ textarea {
     const infoText = document.getElementById('info-text');
     const navHud = document.getElementById('nav-hud');
     const notesTextarea = document.getElementById('notes-textarea');
-let lastTapLatLng = null;     // [lat, lng] of last map tap
-let lastTapLabel = null;      // optional description
+
 
     panelToggleBtn.addEventListener('click', () => {
       const isOpen = controlPanel.classList.toggle('open');
@@ -1272,6 +1271,8 @@ let lastTapLabel = null;      // optional description
 
     let clickMarker = null;
     let userLocationMarker = null;
+    let lastTapLatLng = null;     // [lat, lng] of last map tap
+let lastTapLabel = null;      // optional description
 // --- POI layers (parks, food, participant places) ---
 // --- POI layers (parks, food, participant places, plus custom) ---
 const POI_STORAGE_KEY = 'osmRoutePoiLayers';
@@ -1300,6 +1301,96 @@ const POI_DEFAULTS = {
     isBuiltin: true
   }
 };
+    // --- POI layers (parks, food, participant places) ---
+    const poiLayers = {
+      'poi-parks': L.layerGroup().addTo(map),
+      'poi-food': L.layerGroup().addTo(map),
+      'poi-participant': L.layerGroup().addTo(map),
+    };
+
+    // Hook up the Places & layers UI
+    const placesLayerSelect = document.getElementById('places-layer-select');
+    const placesAddFromTapBtn = document.getElementById('places-add-from-tap-btn');
+    const placesAddFromSearchBtn = document.getElementById('places-add-from-search-btn');
+    const placesClearLayerBtn = document.getElementById('places-clear-layer-btn');
+
+    let activePoiLayerId = placesLayerSelect ? placesLayerSelect.value : 'poi-parks';
+
+    function getActivePoiLayer() {
+      return poiLayers[activePoiLayerId] || null;
+    }
+
+    if (placesLayerSelect) {
+      placesLayerSelect.addEventListener('change', () => {
+        activePoiLayerId = placesLayerSelect.value;
+      });
+    }
+
+    function makePoiMarker(lat, lng, label, layerId) {
+      // pick a colour based on which layer we’re in
+      let color = '#22c55e';
+      if (layerId === 'poi-parks') color = '#16a34a';
+      if (layerId === 'poi-food') color = '#f97316';
+      if (layerId === 'poi-participant') color = '#0ea5e9';
+
+      return L.circleMarker([lat, lng], {
+        radius: 6,
+        color,
+        fillColor: color,
+        fillOpacity: 0.95,
+        weight: 1.5
+      }).bindPopup(`<b>${label}</b><br><span style="font-size:12px;color:#6b7280;">Layer: ${layerId}</span>`);
+    }
+
+    if (placesAddFromTapBtn) {
+      placesAddFromTapBtn.addEventListener('click', () => {
+        const layer = getActivePoiLayer();
+        if (!layer) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+        if (!lastTapLatLng) {
+          infoText.textContent = 'Tap the map first, then add from last tap.';
+          return;
+        }
+        const [lat, lng] = lastTapLatLng;
+        const marker = makePoiMarker(lat, lng, 'Custom place (map tap)', activePoiLayerId);
+        layer.addLayer(marker);
+        infoText.textContent = 'Point added to layer from last tap.';
+      });
+    }
+
+    if (placesAddFromSearchBtn) {
+      placesAddFromSearchBtn.addEventListener('click', () => {
+        const layer = getActivePoiLayer();
+        if (!layer) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+        if (!lastSearchLatLng) {
+          infoText.textContent =
+            'Search for a place first, then add from search.';
+          return;
+        }
+        const [lat, lng] = lastSearchLatLng;
+        const label = lastSearchLabel || 'Search result';
+        const marker = makePoiMarker(lat, lng, label, activePoiLayerId);
+        layer.addLayer(marker);
+        infoText.textContent = 'Search result added to layer.';
+      });
+    }
+
+    if (placesClearLayerBtn) {
+      placesClearLayerBtn.addEventListener('click', () => {
+        const layer = getActivePoiLayer();
+        if (!layer) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+        layer.clearLayers();
+        infoText.textContent = 'All points cleared from this layer.';
+      });
+    }
 
 // poiLayers[layerId] = { id, name, color, emoji, isBuiltin, items: [{lat,lng,label}], layer: L.LayerGroup }
 let poiLayers = {};
@@ -2637,7 +2728,7 @@ addSearchWaypointBtn.addEventListener('click', () => {
     }
 
     // --- Legend layer toggles ---
-    const layerLegendEl = document.getElementById("layer-legend");
+     const layerLegendEl = document.getElementById("layer-legend");
 
     if (layerLegendEl) {
       const checkboxes = layerLegendEl.querySelectorAll(
@@ -2649,7 +2740,11 @@ addSearchWaypointBtn.addEventListener('click', () => {
           const layerId = e.target.dataset.layer;
           const checked = e.target.checked;
 
-          const layer = centreLayers[layerId];
+          // look first in centreLayers, then in poiLayers
+          const layer =
+            (centreLayers && centreLayers[layerId]) ||
+            (poiLayers && poiLayers[layerId]);
+
           if (!layer) return;
 
           if (checked) {
@@ -2661,6 +2756,7 @@ addSearchWaypointBtn.addEventListener('click', () => {
       });
     }
 
+    // --- Collapsible legend chip behaviour stays the same ---
     const legendToggleBtn = document.getElementById("legend-toggle");
 
     if (legendToggleBtn && layerLegendEl) {
@@ -2668,6 +2764,7 @@ addSearchWaypointBtn.addEventListener('click', () => {
         layerLegendEl.classList.toggle("collapsed");
       });
     }
+
   </script>
 </body>
 </html>
