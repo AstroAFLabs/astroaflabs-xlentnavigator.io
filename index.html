@@ -555,6 +555,100 @@ textarea {
   flex: 1;
 }
 
+/* POI layer modal */
+#poi-layer-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+#poi-layer-modal {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100% - 80px);
+  background: #020617;
+  border-radius: 16px;
+  padding: 12px 14px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.95);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+#poi-layer-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.swatch-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.4);
+}
+
+.swatch-btn.selected {
+  border-color: #e5e7eb;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.5);
+}
+
+#poi-search-results {
+  display: grid;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  font-size: 11px;
+}
+
+.poi-search-item {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  cursor: pointer;
+}
+
+.poi-search-item.selected {
+  border-color: rgba(34, 197, 94, 0.9);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.poi-modal-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.poi-modal-row {
+  display: grid;
+  gap: 6px;
+}
+
+.poi-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* Import file input */
 #file-input {
   font-size: 11px;
@@ -1077,6 +1171,97 @@ textarea {
     </div>
   </div>
 
+  <!-- POI layer modal -->
+  <div id="poi-layer-modal-backdrop">
+    <div id="poi-layer-modal">
+      <div id="poi-layer-modal-title">
+        <span class="left">
+          <span>📍</span>
+          <span id="poi-layer-modal-title-text">Edit POI layer</span>
+        </span>
+        <button id="poi-layer-modal-close-btn" class="btn small" type="button">✕</button>
+      </div>
+
+      <div class="poi-modal-grid">
+        <div class="poi-modal-row">
+          <label class="inline-label" for="poi-layer-name-input">Layer name</label>
+          <input id="poi-layer-name-input" type="text" placeholder="e.g. Toilets, Water, Cafes" />
+        </div>
+
+        <div class="poi-modal-row">
+          <label class="inline-label">Layer color</label>
+          <div class="swatch-row" id="poi-layer-color-swatches"></div>
+        </div>
+
+        <div class="poi-modal-row">
+          <label class="inline-label" for="poi-layer-notes-input">Layer notes</label>
+          <textarea id="poi-layer-notes-input" placeholder="Optional: access notes, hours, or key info."></textarea>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">
+            <span class="emoji">➕</span>
+            <span>Add a place to this layer</span>
+          </div>
+          <div class="section-body">
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-place-name-input">Place name</label>
+              <input id="poi-place-name-input" type="text" placeholder="e.g. City Park Fountain" />
+            </div>
+
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-place-type-select">Place type</label>
+              <select id="poi-place-type-select">
+                <option value="general">General</option>
+                <option value="toilet">Toilet</option>
+                <option value="water">Water fountain</option>
+                <option value="parking">Parking</option>
+                <option value="cafe">Cafe</option>
+                <option value="park">Park</option>
+                <option value="medical">Medical</option>
+                <option value="participant">Participant</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-address-search-input">Search address</label>
+              <div class="btn-row">
+                <input id="poi-address-search-input" type="text" placeholder="Search for an address or POI" />
+                <button id="poi-address-search-btn" class="btn small primary" type="button">
+                  <span class="btn-icon">🔎</span> Search
+                </button>
+              </div>
+            </div>
+
+            <div id="poi-search-results"></div>
+
+            <div class="checkbox-row">
+              <input type="checkbox" id="poi-share-layer-checkbox" />
+              <label for="poi-share-layer-checkbox">Also add to another layer</label>
+            </div>
+
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-share-layer-select">Share with layer</label>
+              <select id="poi-share-layer-select" disabled></select>
+            </div>
+
+            <div class="poi-modal-actions">
+              <button id="poi-add-place-btn" class="btn primary full" type="button">
+                <span class="btn-icon">➕</span> Add place
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="poi-modal-actions">
+        <button id="poi-layer-modal-cancel-btn" class="btn" type="button">Cancel</button>
+        <button id="poi-layer-modal-save-btn" class="btn primary" type="button">Save layer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Leaflet JS -->
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -1291,9 +1476,10 @@ textarea {
         name: 'Parks',
         color: '#16a34a',
         isBuiltin: true,
+        notes: 'Green spaces and parklands.',
         items: [
-          { lat: -34.9282, lng: 138.6009, label: 'Victoria Square' },
-          { lat: -34.9186, lng: 138.6025, label: 'Botanic Garden' }
+          { lat: -34.9282, lng: 138.6009, label: 'Victoria Square', type: 'park' },
+          { lat: -34.9186, lng: 138.6025, label: 'Botanic Garden', type: 'park' }
         ]
       },
       'poi-food': {
@@ -1301,9 +1487,10 @@ textarea {
         name: 'Food / cafes',
         color: '#f97316',
         isBuiltin: true,
+        notes: 'Food, cafes, and meal stops.',
         items: [
-          { lat: -34.9327, lng: 138.5990, label: 'Central Market' },
-          { lat: -34.9256, lng: 138.6036, label: 'Rundle Street' }
+          { lat: -34.9327, lng: 138.5990, label: 'Central Market', type: 'cafe' },
+          { lat: -34.9256, lng: 138.6036, label: 'Rundle Street', type: 'cafe' }
         ]
       },
       'poi-participant': {
@@ -1311,17 +1498,24 @@ textarea {
         name: 'Participant places',
         color: '#0ea5e9',
         isBuiltin: true,
+        notes: 'Participant homes and meeting points.',
         items: [
-          { lat: -34.9412, lng: 138.6122, label: 'Participant A' },
-          { lat: -34.9364, lng: 138.5858, label: 'Participant B' }
+          { lat: -34.9412, lng: 138.6122, label: 'Participant A', type: 'participant' },
+          { lat: -34.9364, lng: 138.5858, label: 'Participant B', type: 'participant' }
         ]
       }
     };
 
     const poiLayers = {};
 
+    function formatPoiType(type) {
+      if (!type || type === 'general') return '';
+      return type.replace(/-/g, ' ');
+    }
+
     function createPoiMarker(entry, item) {
       const label = item.label || entry.name;
+      const typeLabel = formatPoiType(item.type);
       return L.circleMarker([item.lat, item.lng], {
         radius: 6,
         color: entry.color,
@@ -1330,12 +1524,15 @@ textarea {
         weight: 1.5
       }).bindPopup(
         `<b>${label}</b><br>` +
+        (typeLabel
+          ? `<span style="font-size:12px;color:#6b7280;">Type: ${typeLabel}</span><br>`
+          : '') +
         `<span style="font-size:12px;color:#6b7280;">Layer: ${entry.name}</span>`
       );
     }
 
-    function addPoiItem(entry, lat, lng, label) {
-      const item = { lat, lng, label: label || entry.name };
+    function addPoiItem(entry, lat, lng, label, type) {
+      const item = { lat, lng, label: label || entry.name, type: type || 'general' };
       entry.items.push(item);
       const marker = createPoiMarker(entry, item);
       entry.layer.addLayer(marker);
@@ -1365,6 +1562,7 @@ textarea {
         placesLayerSelect.value = nextId;
         activePoiLayerId = nextId;
       }
+      refreshShareLayerSelect(activePoiLayerId);
     }
 
     function initPoiLayers() {
@@ -1374,6 +1572,7 @@ textarea {
           name: def.name,
           color: def.color,
           isBuiltin: !!def.isBuiltin,
+          notes: def.notes || '',
           items: Array.isArray(def.items) ? def.items.slice() : [],
           layer: L.layerGroup().addTo(map)
         };
@@ -1398,15 +1597,175 @@ textarea {
     const placesEditLayerBtn = document.getElementById('places-edit-layer-btn');
     const placesDeleteLayerBtn = document.getElementById('places-delete-layer-btn');
 
+    const poiLayerModalBackdrop = document.getElementById('poi-layer-modal-backdrop');
+    const poiLayerModalTitle = document.getElementById('poi-layer-modal-title-text');
+    const poiLayerModalCloseBtn = document.getElementById('poi-layer-modal-close-btn');
+    const poiLayerModalCancelBtn = document.getElementById('poi-layer-modal-cancel-btn');
+    const poiLayerModalSaveBtn = document.getElementById('poi-layer-modal-save-btn');
+    const poiLayerNameInput = document.getElementById('poi-layer-name-input');
+    const poiLayerNotesInput = document.getElementById('poi-layer-notes-input');
+    const poiLayerColorSwatches = document.getElementById('poi-layer-color-swatches');
+    const poiPlaceNameInput = document.getElementById('poi-place-name-input');
+    const poiPlaceTypeSelect = document.getElementById('poi-place-type-select');
+    const poiAddressSearchInput = document.getElementById('poi-address-search-input');
+    const poiAddressSearchBtn = document.getElementById('poi-address-search-btn');
+    const poiSearchResults = document.getElementById('poi-search-results');
+    const poiAddPlaceBtn = document.getElementById('poi-add-place-btn');
+    const poiShareLayerCheckbox = document.getElementById('poi-share-layer-checkbox');
+    const poiShareLayerSelect = document.getElementById('poi-share-layer-select');
+
     let activePoiLayerId = null;
+    let poiLayerModalMode = 'edit';
+    let poiLayerModalEntryId = null;
+    let selectedPoiColor = '#0ea5e9';
+    let selectedPoiSearch = null;
+
+    const POI_COLOR_SWATCHES = [
+      '#16a34a',
+      '#22c55e',
+      '#0ea5e9',
+      '#2563eb',
+      '#a855f7',
+      '#f97316',
+      '#f59e0b',
+      '#ef4444',
+      '#14b8a6',
+      '#e11d48'
+    ];
 
     function getActivePoiLayerEntry() {
       return activePoiLayerId ? poiLayers[activePoiLayerId] : null;
     }
 
+    function closePoiLayerModal() {
+      poiLayerModalBackdrop.style.display = 'none';
+      selectedPoiSearch = null;
+      poiSearchResults.innerHTML = '';
+      poiShareLayerCheckbox.checked = false;
+      poiShareLayerSelect.disabled = true;
+    }
+
+    function openPoiLayerModal(mode, entry) {
+      poiLayerModalMode = mode;
+      poiLayerModalEntryId = entry ? entry.id : null;
+      poiLayerModalTitle.textContent = mode === 'create' ? 'Create POI layer' : 'Edit POI layer';
+      poiLayerNameInput.value = entry ? entry.name : '';
+      poiLayerNotesInput.value = entry ? entry.notes || '' : '';
+      selectedPoiColor = entry ? entry.color : '#0ea5e9';
+
+      poiPlaceNameInput.value = '';
+      poiPlaceTypeSelect.value = 'general';
+      poiAddressSearchInput.value = '';
+      poiSearchResults.innerHTML = '';
+      selectedPoiSearch = null;
+
+      renderColorSwatches();
+      refreshShareLayerSelect(entry ? entry.id : null);
+
+      poiLayerModalBackdrop.style.display = 'flex';
+    }
+
+    function renderColorSwatches() {
+      if (!poiLayerColorSwatches) return;
+      poiLayerColorSwatches.innerHTML = '';
+      POI_COLOR_SWATCHES.forEach((color) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'swatch-btn' + (color === selectedPoiColor ? ' selected' : '');
+        btn.style.background = color;
+        btn.dataset.color = color;
+        btn.addEventListener('click', () => {
+          selectedPoiColor = color;
+          renderColorSwatches();
+        });
+        poiLayerColorSwatches.appendChild(btn);
+      });
+    }
+
+    function refreshShareLayerSelect(currentId) {
+      if (!poiShareLayerSelect) return;
+      poiShareLayerSelect.innerHTML = '';
+      Object.values(poiLayers).forEach((entry) => {
+        if (entry.id === currentId) return;
+        const opt = document.createElement('option');
+        opt.value = entry.id;
+        opt.textContent = entry.name;
+        poiShareLayerSelect.appendChild(opt);
+      });
+      const hasOptions = poiShareLayerSelect.options.length > 0;
+      poiShareLayerSelect.disabled = !poiShareLayerCheckbox.checked || !hasOptions;
+    }
+
     if (placesLayerSelect) {
       placesLayerSelect.addEventListener('change', () => {
         activePoiLayerId = placesLayerSelect.value;
+      });
+    }
+
+    if (poiShareLayerCheckbox) {
+      poiShareLayerCheckbox.addEventListener('change', () => {
+        poiShareLayerSelect.disabled = !poiShareLayerCheckbox.checked;
+      });
+    }
+
+    if (poiLayerModalCloseBtn) {
+      poiLayerModalCloseBtn.addEventListener('click', closePoiLayerModal);
+    }
+
+    if (poiLayerModalCancelBtn) {
+      poiLayerModalCancelBtn.addEventListener('click', closePoiLayerModal);
+    }
+
+    if (poiLayerModalSaveBtn) {
+      poiLayerModalSaveBtn.addEventListener('click', () => {
+        const name = poiLayerNameInput.value.trim();
+        if (!name) {
+          infoText.textContent = 'Please provide a layer name.';
+          return;
+        }
+
+        if (poiLayerModalMode === 'create') {
+          const baseSlug = name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'custom';
+
+          let id = `poi-${baseSlug}`;
+          let counter = 1;
+          while (poiLayers[id]) {
+            id = `poi-${baseSlug}-${counter++}`;
+          }
+
+          poiLayers[id] = {
+            id,
+            name,
+            color: selectedPoiColor,
+            notes: poiLayerNotesInput.value.trim(),
+            isBuiltin: false,
+            items: [],
+            layer: L.layerGroup().addTo(map)
+          };
+
+          refreshPlacesLayerSelect(id);
+          infoText.textContent = `New layer created: "${name}".`;
+        } else {
+          const entry = poiLayers[poiLayerModalEntryId];
+          if (!entry) return;
+          entry.name = name;
+          entry.color = selectedPoiColor;
+          entry.notes = poiLayerNotesInput.value.trim();
+
+          entry.layer.clearLayers();
+          entry.items.forEach((item) => {
+            const marker = createPoiMarker(entry, item);
+            entry.layer.addLayer(marker);
+          });
+
+          refreshPlacesLayerSelect(entry.id);
+          infoText.textContent = `Layer updated: "${entry.name}".`;
+        }
+
+        closePoiLayerModal();
       });
     }
 
@@ -1422,7 +1781,7 @@ textarea {
           return;
         }
         const [lat, lng] = lastTapLatLng;
-        addPoiItem(entry, lat, lng, lastTapLabel || 'Custom place (map tap)');
+        addPoiItem(entry, lat, lng, lastTapLabel || 'Custom place (map tap)', 'general');
         infoText.textContent = 'Point added to layer from last tap.';
       });
     }
@@ -1441,7 +1800,7 @@ textarea {
         }
         const [lat, lng] = lastSearchLatLng;
         const label = lastSearchLabel || 'Search result';
-        addPoiItem(entry, lat, lng, label);
+        addPoiItem(entry, lat, lng, label, 'general');
         infoText.textContent = 'Search result added to layer.';
       });
     }
@@ -1459,60 +1818,11 @@ textarea {
       });
     }
 
-    if (placesNewLayerBtn) {
-      placesNewLayerBtn.addEventListener('click', () => {
-        const name = (prompt('Name for the new layer (e.g. Beaches, Doctors):') || '').trim();
-        if (!name) return;
-        let color = (prompt('Color for this layer (CSS color or hex):', '#0ea5e9') || '').trim();
-        if (!color) color = '#0ea5e9';
-
-        const baseSlug = name
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '') || 'custom';
-
-        let id = `poi-${baseSlug}`;
-        let counter = 1;
-        while (poiLayers[id]) {
-          id = `poi-${baseSlug}-${counter++}`;
-        }
-
-        poiLayers[id] = {
-          id,
-          name,
-          color,
-          isBuiltin: false,
-          items: [],
-          layer: L.layerGroup().addTo(map)
-        };
-
-        refreshPlacesLayerSelect(id);
-        infoText.textContent = `New layer created: "${name}".`;
-      });
-    }
-
     if (placesEditLayerBtn) {
       placesEditLayerBtn.addEventListener('click', () => {
         const entry = getActivePoiLayerEntry();
         if (!entry) return;
-
-        const name = (prompt('Layer name:', entry.name) || '').trim();
-        if (!name) return;
-
-        let color = (prompt('Layer color (CSS color or hex):', entry.color) || '').trim();
-        if (!color) color = entry.color;
-
-        entry.name = name;
-        entry.color = color;
-
-        entry.layer.clearLayers();
-        entry.items.forEach((item) => {
-          const marker = createPoiMarker(entry, item);
-          entry.layer.addLayer(marker);
-        });
-
-        refreshPlacesLayerSelect(entry.id);
-        infoText.textContent = `Layer updated: "${entry.name}".`;
+        openPoiLayerModal('edit', entry);
       });
     }
 
@@ -1533,6 +1843,109 @@ textarea {
         delete poiLayers[entry.id];
         refreshPlacesLayerSelect();
         infoText.textContent = 'Layer deleted.';
+      });
+    }
+
+    if (placesNewLayerBtn) {
+      placesNewLayerBtn.addEventListener('click', () => {
+        openPoiLayerModal('create', null);
+      });
+    }
+
+    if (poiAddressSearchBtn) {
+      poiAddressSearchBtn.addEventListener('click', async () => {
+        const query = poiAddressSearchInput.value.trim();
+        if (!query) {
+          infoText.textContent = 'Enter an address or place to search.';
+          return;
+        }
+
+        poiSearchResults.innerHTML = 'Searching...';
+        selectedPoiSearch = null;
+
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            query
+          )}&addressdetails=1&limit=5`;
+
+          const response = await fetch(url, {
+            headers: {
+              'Accept-Language': 'en'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Search failed');
+          }
+
+          const results = await response.json();
+          poiSearchResults.innerHTML = '';
+
+          if (!results || !results.length) {
+            poiSearchResults.textContent = 'No results found.';
+            return;
+          }
+
+          results.forEach((place, idx) => {
+            const item = document.createElement('div');
+            item.className = 'poi-search-item';
+            item.textContent = place.display_name;
+            item.addEventListener('click', () => {
+              selectedPoiSearch = {
+                lat: parseFloat(place.lat),
+                lng: parseFloat(place.lon),
+                label: place.display_name
+              };
+              poiSearchResults.querySelectorAll('.poi-search-item').forEach((el) => {
+                el.classList.remove('selected');
+              });
+              item.classList.add('selected');
+            });
+            if (idx === 0) {
+              item.classList.add('selected');
+              selectedPoiSearch = {
+                lat: parseFloat(place.lat),
+                lng: parseFloat(place.lon),
+                label: place.display_name
+              };
+            }
+            poiSearchResults.appendChild(item);
+          });
+        } catch (e) {
+          console.error(e);
+          poiSearchResults.textContent = 'Search failed. Try again.';
+        }
+      });
+    }
+
+    if (poiAddPlaceBtn) {
+      poiAddPlaceBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+
+        if (!selectedPoiSearch) {
+          infoText.textContent = 'Select a search result first.';
+          return;
+        }
+
+        const label = poiPlaceNameInput.value.trim() || selectedPoiSearch.label;
+        const type = poiPlaceTypeSelect.value;
+        addPoiItem(entry, selectedPoiSearch.lat, selectedPoiSearch.lng, label, type);
+
+        if (poiShareLayerCheckbox.checked) {
+          const otherId = poiShareLayerSelect.value;
+          const otherEntry = poiLayers[otherId];
+          if (otherEntry) {
+            addPoiItem(otherEntry, selectedPoiSearch.lat, selectedPoiSearch.lng, label, type);
+          }
+        }
+
+        infoText.textContent = `Added "${label}" to ${entry.name}.`;
+        poiPlaceNameInput.value = '';
+        poiPlaceTypeSelect.value = 'general';
       });
     }
 
