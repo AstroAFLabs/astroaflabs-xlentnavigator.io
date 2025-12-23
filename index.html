@@ -945,12 +945,17 @@ textarea {
       </div>
 
       <div class="section-body" data-section-body="places">
-        <label class="inline-label" for="places-layer-select">Active layer</label>
-        <select id="places-layer-select">
-          <option value="poi-parks">Parks</option>
-          <option value="poi-food">Food / cafés</option>
-          <option value="poi-participant">Participant places</option>
-        </select>
+        <div class="two-col">
+          <div>
+            <label class="inline-label" for="places-layer-select">Active layer</label>
+            <select id="places-layer-select"></select>
+          </div>
+          <div class="btn-row" style="align-self:flex-end; justify-content:flex-end;">
+            <button id="places-new-layer-btn" class="btn small" type="button">
+              <span class="btn-icon">➕</span> New layer
+            </button>
+          </div>
+        </div>
 
         <div class="small-text">
           Use layers for parks, food, participant places, etc.
@@ -969,6 +974,12 @@ textarea {
         <div class="btn-row">
           <button id="places-clear-layer-btn" class="btn small danger" type="button">
             <span class="btn-icon">🧹</span> Clear this layer
+          </button>
+          <button id="places-edit-layer-btn" class="btn small" type="button">
+            <span class="btn-icon">✏️</span> Edit layer
+          </button>
+          <button id="places-delete-layer-btn" class="btn small danger" type="button">
+            <span class="btn-icon">🗑</span> Delete layer
           </button>
         </div>
       </div>
@@ -1272,25 +1283,125 @@ textarea {
     let clickMarker = null;
     let userLocationMarker = null;
     let lastTapLatLng = null;     // [lat, lng] of last map tap
-let lastTapLabel = null;      // optional description
-// --- POI layers (parks, food, participant places) ---
+    let lastTapLabel = null;      // optional description
     // --- POI layers (parks, food, participant places) ---
-    const poiLayers = {
-      'poi-parks': L.layerGroup().addTo(map),
-      'poi-food': L.layerGroup().addTo(map),
-      'poi-participant': L.layerGroup().addTo(map),
+    const POI_DEFAULTS = {
+      'poi-parks': {
+        id: 'poi-parks',
+        name: 'Parks',
+        color: '#16a34a',
+        isBuiltin: true,
+        items: [
+          { lat: -34.9282, lng: 138.6009, label: 'Victoria Square' },
+          { lat: -34.9186, lng: 138.6025, label: 'Botanic Garden' }
+        ]
+      },
+      'poi-food': {
+        id: 'poi-food',
+        name: 'Food / cafes',
+        color: '#f97316',
+        isBuiltin: true,
+        items: [
+          { lat: -34.9327, lng: 138.5990, label: 'Central Market' },
+          { lat: -34.9256, lng: 138.6036, label: 'Rundle Street' }
+        ]
+      },
+      'poi-participant': {
+        id: 'poi-participant',
+        name: 'Participant places',
+        color: '#0ea5e9',
+        isBuiltin: true,
+        items: [
+          { lat: -34.9412, lng: 138.6122, label: 'Participant A' },
+          { lat: -34.9364, lng: 138.5858, label: 'Participant B' }
+        ]
+      }
     };
+
+    const poiLayers = {};
+
+    function createPoiMarker(entry, item) {
+      const label = item.label || entry.name;
+      return L.circleMarker([item.lat, item.lng], {
+        radius: 6,
+        color: entry.color,
+        fillColor: entry.color,
+        fillOpacity: 0.95,
+        weight: 1.5
+      }).bindPopup(
+        `<b>${label}</b><br>` +
+        `<span style="font-size:12px;color:#6b7280;">Layer: ${entry.name}</span>`
+      );
+    }
+
+    function addPoiItem(entry, lat, lng, label) {
+      const item = { lat, lng, label: label || entry.name };
+      entry.items.push(item);
+      const marker = createPoiMarker(entry, item);
+      entry.layer.addLayer(marker);
+    }
+
+    function refreshPlacesLayerSelect(selectedId) {
+      if (!placesLayerSelect) return;
+      placesLayerSelect.innerHTML = '';
+
+      const entries = Object.values(poiLayers).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+
+      entries.forEach((entry) => {
+        const opt = document.createElement('option');
+        opt.value = entry.id;
+        opt.textContent = entry.name;
+        placesLayerSelect.appendChild(opt);
+      });
+
+      const fallbackId = entries.length ? entries[0].id : '';
+      const nextId = (selectedId && poiLayers[selectedId])
+        ? selectedId
+        : fallbackId;
+
+      if (nextId) {
+        placesLayerSelect.value = nextId;
+        activePoiLayerId = nextId;
+      }
+    }
+
+    function initPoiLayers() {
+      Object.values(POI_DEFAULTS).forEach((def) => {
+        const entry = {
+          id: def.id,
+          name: def.name,
+          color: def.color,
+          isBuiltin: !!def.isBuiltin,
+          items: Array.isArray(def.items) ? def.items.slice() : [],
+          layer: L.layerGroup().addTo(map)
+        };
+
+        entry.items.forEach((item) => {
+          const marker = createPoiMarker(entry, item);
+          entry.layer.addLayer(marker);
+        });
+
+        poiLayers[entry.id] = entry;
+      });
+
+      refreshPlacesLayerSelect();
+    }
 
     // Hook up the Places & layers UI
     const placesLayerSelect = document.getElementById('places-layer-select');
     const placesAddFromTapBtn = document.getElementById('places-add-from-tap-btn');
     const placesAddFromSearchBtn = document.getElementById('places-add-from-search-btn');
     const placesClearLayerBtn = document.getElementById('places-clear-layer-btn');
+    const placesNewLayerBtn = document.getElementById('places-new-layer-btn');
+    const placesEditLayerBtn = document.getElementById('places-edit-layer-btn');
+    const placesDeleteLayerBtn = document.getElementById('places-delete-layer-btn');
 
-    let activePoiLayerId = placesLayerSelect ? placesLayerSelect.value : 'poi-parks';
+    let activePoiLayerId = null;
 
-    function getActivePoiLayer() {
-      return poiLayers[activePoiLayerId] || null;
+    function getActivePoiLayerEntry() {
+      return activePoiLayerId ? poiLayers[activePoiLayerId] : null;
     }
 
     if (placesLayerSelect) {
@@ -1299,26 +1410,10 @@ let lastTapLabel = null;      // optional description
       });
     }
 
-    function makePoiMarker(lat, lng, label, layerId) {
-      // pick a colour based on which layer we’re in
-      let color = '#22c55e';
-      if (layerId === 'poi-parks') color = '#16a34a';
-      if (layerId === 'poi-food') color = '#f97316';
-      if (layerId === 'poi-participant') color = '#0ea5e9';
-
-      return L.circleMarker([lat, lng], {
-        radius: 6,
-        color,
-        fillColor: color,
-        fillOpacity: 0.95,
-        weight: 1.5
-      }).bindPopup(`<b>${label}</b><br><span style="font-size:12px;color:#6b7280;">Layer: ${layerId}</span>`);
-    }
-
     if (placesAddFromTapBtn) {
       placesAddFromTapBtn.addEventListener('click', () => {
-        const layer = getActivePoiLayer();
-        if (!layer) {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
           infoText.textContent = 'Choose an active layer first.';
           return;
         }
@@ -1327,16 +1422,15 @@ let lastTapLabel = null;      // optional description
           return;
         }
         const [lat, lng] = lastTapLatLng;
-        const marker = makePoiMarker(lat, lng, 'Custom place (map tap)', activePoiLayerId);
-        layer.addLayer(marker);
+        addPoiItem(entry, lat, lng, lastTapLabel || 'Custom place (map tap)');
         infoText.textContent = 'Point added to layer from last tap.';
       });
     }
 
     if (placesAddFromSearchBtn) {
       placesAddFromSearchBtn.addEventListener('click', () => {
-        const layer = getActivePoiLayer();
-        if (!layer) {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
           infoText.textContent = 'Choose an active layer first.';
           return;
         }
@@ -1347,23 +1441,102 @@ let lastTapLabel = null;      // optional description
         }
         const [lat, lng] = lastSearchLatLng;
         const label = lastSearchLabel || 'Search result';
-        const marker = makePoiMarker(lat, lng, label, activePoiLayerId);
-        layer.addLayer(marker);
+        addPoiItem(entry, lat, lng, label);
         infoText.textContent = 'Search result added to layer.';
       });
     }
 
     if (placesClearLayerBtn) {
       placesClearLayerBtn.addEventListener('click', () => {
-        const layer = getActivePoiLayer();
-        if (!layer) {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
           infoText.textContent = 'Choose an active layer first.';
           return;
         }
-        layer.clearLayers();
+        entry.layer.clearLayers();
+        entry.items = [];
         infoText.textContent = 'All points cleared from this layer.';
       });
     }
+
+    if (placesNewLayerBtn) {
+      placesNewLayerBtn.addEventListener('click', () => {
+        const name = (prompt('Name for the new layer (e.g. Beaches, Doctors):') || '').trim();
+        if (!name) return;
+        let color = (prompt('Color for this layer (CSS color or hex):', '#0ea5e9') || '').trim();
+        if (!color) color = '#0ea5e9';
+
+        const baseSlug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || 'custom';
+
+        let id = `poi-${baseSlug}`;
+        let counter = 1;
+        while (poiLayers[id]) {
+          id = `poi-${baseSlug}-${counter++}`;
+        }
+
+        poiLayers[id] = {
+          id,
+          name,
+          color,
+          isBuiltin: false,
+          items: [],
+          layer: L.layerGroup().addTo(map)
+        };
+
+        refreshPlacesLayerSelect(id);
+        infoText.textContent = `New layer created: "${name}".`;
+      });
+    }
+
+    if (placesEditLayerBtn) {
+      placesEditLayerBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) return;
+
+        const name = (prompt('Layer name:', entry.name) || '').trim();
+        if (!name) return;
+
+        let color = (prompt('Layer color (CSS color or hex):', entry.color) || '').trim();
+        if (!color) color = entry.color;
+
+        entry.name = name;
+        entry.color = color;
+
+        entry.layer.clearLayers();
+        entry.items.forEach((item) => {
+          const marker = createPoiMarker(entry, item);
+          entry.layer.addLayer(marker);
+        });
+
+        refreshPlacesLayerSelect(entry.id);
+        infoText.textContent = `Layer updated: "${entry.name}".`;
+      });
+    }
+
+    if (placesDeleteLayerBtn) {
+      placesDeleteLayerBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) return;
+        if (entry.isBuiltin) {
+          alert('Built-in layers cannot be deleted. Use Clear instead.');
+          return;
+        }
+
+        const ok = confirm(`Delete layer "${entry.name}" and all its places?`);
+        if (!ok) return;
+
+        entry.layer.clearLayers();
+        map.removeLayer(entry.layer);
+        delete poiLayers[entry.id];
+        refreshPlacesLayerSelect();
+        infoText.textContent = 'Layer deleted.';
+      });
+    }
+
+    initPoiLayers();
 
     // ------------ Locate Me – hook both main button + small button ------------
     const locateBtn = document.getElementById('locate-btn');
@@ -1669,6 +1842,8 @@ function addWaypoint(lat, lng, sourceLabel) {
 map.on('click', (e) => {
   const lat = e.latlng.lat;
   const lng = e.latlng.lng;
+  lastTapLatLng = [lat, lng];
+  lastTapLabel = null;
 
   if (routeMode) {
     addWaypoint(lat, lng, 'map tap');
@@ -2503,9 +2678,10 @@ addSearchWaypointBtn.addEventListener('click', () => {
           const checked = e.target.checked;
 
           // look first in centreLayers, then in poiLayers
+          const poiEntry = poiLayers && poiLayers[layerId];
           const layer =
             (centreLayers && centreLayers[layerId]) ||
-            (poiLayers && poiLayers[layerId]);
+            (poiEntry && poiEntry.layer);
 
           if (!layer) return;
 
