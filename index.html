@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1086,6 +1087,19 @@ textarea {
         </div>
 
         <div class="btn-row">
+          <button id="places-load-toilets-btn" class="btn small" type="button">
+            <span class="btn-icon">🚻</span> Load toilets nearby
+          </button>
+          <button id="places-load-water-btn" class="btn small" type="button">
+            <span class="btn-icon">💧</span> Load water nearby
+          </button>
+        </div>
+
+        <div class="small-text">
+          Pulls toilets and water fountains from OpenStreetMap within the current map view.
+        </div>
+
+        <div class="btn-row">
           <button id="places-clear-layer-btn" class="btn small danger" type="button">
             <span class="btn-icon">🧹</span> Clear this layer
           </button>
@@ -1489,7 +1503,7 @@ textarea {
     let userLocationMarker = null;
     let lastTapLatLng = null;     // [lat, lng] of last map tap
     let lastTapLabel = null;      // optional description
-    // --- POI layers (parks, food, participant places) ---
+    // --- POI layers (parks, food, participant places, toilets, water) ---
     
     const POI_DEFAULTS = {
       'poi-parks': {
@@ -1523,8 +1537,23 @@ textarea {
         items: [
           { lat: -34.9412, lng: 138.6122, label: 'Participant A', type: 'participant' },
           { lat: -34.9364, lng: 138.5858, label: 'Participant B', type: 'participant' }
-        
         ]
+      },
+      'poi-toilets': {
+        id: 'poi-toilets',
+        name: 'Toilets',
+        color: '#0ea5e9',
+        isBuiltin: true,
+        notes: 'Public toilets and restrooms.',
+        items: []
+      },
+      'poi-water': {
+        id: 'poi-water',
+        name: 'Water fountains',
+        color: '#38bdf8',
+        isBuiltin: true,
+        notes: 'Drinking water taps and fountains.',
+        items: []
       }
     };
 
@@ -1558,6 +1587,88 @@ textarea {
       entry.items.push(item);
       const marker = createPoiMarker(entry, item);
       entry.layer.addLayer(marker);
+    }
+
+    const OVERPASS_ENDPOINT = 'https://overpass-api.de/api/interpreter';
+
+    function hasPoiItem(entry, lat, lng) {
+      return entry.items.some(
+        (item) =>
+          Math.abs(item.lat - lat) < 1e-6 &&
+          Math.abs(item.lng - lng) < 1e-6
+      );
+    }
+
+    async function loadAmenitiesForLayer(layerId, overpassFilter, options = {}) {
+      const entry = poiLayers[layerId];
+      if (!entry) {
+        infoText.textContent = 'That POI layer is not available.';
+        return;
+      }
+
+      const bounds = map.getBounds();
+      const south = bounds.getSouth();
+      const west = bounds.getWest();
+      const north = bounds.getNorth();
+      const east = bounds.getEast();
+
+      const query = `[out:json][timeout:25];
+(
+  node${overpassFilter}(${south},${west},${north},${east});
+  way${overpassFilter}(${south},${west},${north},${east});
+  relation${overpassFilter}(${south},${west},${north},${east});
+);
+out center;`;
+
+      infoText.textContent = `Loading ${entry.name.toLowerCase()} from OpenStreetMap...`;
+
+      try {
+        const response = await fetch(OVERPASS_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({ data: query })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Overpass error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const elements = Array.isArray(data.elements) ? data.elements : [];
+        let added = 0;
+
+        elements.forEach((el) => {
+          const lat = typeof el.lat === 'number' ? el.lat : el.center && el.center.lat;
+          const lng = typeof el.lon === 'number' ? el.lon : el.center && el.center.lon;
+          if (typeof lat !== 'number' || typeof lng !== 'number') return;
+          if (hasPoiItem(entry, lat, lng)) return;
+
+          const tags = el.tags || {};
+          const rawAmenity = tags.amenity || '';
+          let type = options.type || rawAmenity || 'general';
+
+          if (rawAmenity === 'drinking_water' || rawAmenity === 'fountain') {
+            type = 'water';
+          } else if (rawAmenity === 'toilets') {
+            type = 'toilet';
+          }
+
+          const label = tags.name || options.labelFallback || entry.name;
+          addPoiItem(entry, lat, lng, label, type);
+          added += 1;
+        });
+
+        if (added) {
+          infoText.textContent = `Added ${added} ${entry.name.toLowerCase()} from OpenStreetMap.`;
+        } else {
+          infoText.textContent = `No ${entry.name.toLowerCase()} found in the current view.`;
+        }
+      } catch (err) {
+        console.error(err);
+        infoText.textContent = 'Amenity lookup failed. Try again.';
+      }
     }
 
     function refreshPlacesLayerSelect(selectedId) {
@@ -1614,6 +1725,8 @@ textarea {
     const placesLayerSelect = document.getElementById('places-layer-select');
     const placesAddFromTapBtn = document.getElementById('places-add-from-tap-btn');
     const placesAddFromSearchBtn = document.getElementById('places-add-from-search-btn');
+    const placesLoadToiletsBtn = document.getElementById('places-load-toilets-btn');
+    const placesLoadWaterBtn = document.getElementById('places-load-water-btn');
     const placesClearLayerBtn = document.getElementById('places-clear-layer-btn');
     const placesNewLayerBtn = document.getElementById('places-new-layer-btn');
     const placesEditLayerBtn = document.getElementById('places-edit-layer-btn');
@@ -1824,6 +1937,24 @@ textarea {
         const label = lastSearchLabel || 'Search result';
         addPoiItem(entry, lat, lng, label, 'general');
         infoText.textContent = 'Search result added to layer.';
+      });
+    }
+
+    if (placesLoadToiletsBtn) {
+      placesLoadToiletsBtn.addEventListener('click', () => {
+        loadAmenitiesForLayer('poi-toilets', '[amenity=toilets]', {
+          labelFallback: 'Toilet',
+          type: 'toilet'
+        });
+      });
+    }
+
+    if (placesLoadWaterBtn) {
+      placesLoadWaterBtn.addEventListener('click', () => {
+        loadAmenitiesForLayer('poi-water', '[amenity~"^(drinking_water|fountain)$"]', {
+          labelFallback: 'Water fountain',
+          type: 'water'
+        });
       });
     }
 
