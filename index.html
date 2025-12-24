@@ -783,6 +783,13 @@ textarea {
 .legend-swatch.poi-participant {
   background: #a855f7; /* participant places */
 }
+.legend-swatch.poi-toilets {
+  background: #0ea5e9; /* bright blue for toilets */
+}
+
+.legend-swatch.poi-water {
+  background: #38bdf8; /* lighter aqua for drinking water */
+}
 
 .legend-text {
   white-space: nowrap;
@@ -889,7 +896,20 @@ textarea {
           <span class="legend-swatch poi-participant"></span>
           <span class="legend-text">Participant places</span>
         </label>
+        <label class="legend-item">
+  <input type="checkbox" data-layer="poi-toilets" checked />
+  <span class="legend-swatch poi-toilets"></span>
+  <span class="legend-text">Toilets</span>
+</label>
+
+<label class="legend-item">
+  <input type="checkbox" data-layer="poi-water" checked />
+  <span class="legend-swatch poi-water"></span>
+  <span class="legend-text">Water fountains</span>
+</label>
       </div>
+      
+
     </div>
   </div>
 
@@ -1470,6 +1490,7 @@ textarea {
     let lastTapLatLng = null;     // [lat, lng] of last map tap
     let lastTapLabel = null;      // optional description
     // --- POI layers (parks, food, participant places) ---
+    
     const POI_DEFAULTS = {
       'poi-parks': {
         id: 'poi-parks',
@@ -1502,6 +1523,7 @@ textarea {
         items: [
           { lat: -34.9412, lng: 138.6122, label: 'Participant A', type: 'participant' },
           { lat: -34.9364, lng: 138.5858, label: 'Participant B', type: 'participant' }
+        
         ]
       }
     };
