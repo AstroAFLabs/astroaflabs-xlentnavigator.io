@@ -3227,6 +3227,17 @@ const cartoDark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x
 
 // Default base layer
 osmStandard.addTo(map);
+// --- Simple base-layer picker (map style personalisation) ---
+const baseLayers = {
+  'OSM standard': osmStandard,
+  'OSM humanitarian': osmHumanitarian,
+  'Carto dark': cartoDark
+};
+
+L.control.layers(baseLayers, null, {
+  position: 'topright',
+  collapsed: true
+}).addTo(map);
 
   </script>
 </body>
