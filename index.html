@@ -1,706 +1,932 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>OSM Route Planner</title>  <!-- Leaflet CSS -->  <link
+  <title>OSM Route Planner</title>
+
+  <!-- Leaflet CSS -->
+  <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
     crossorigin=""
-  />  <link rel="manifest" href="manifest.webmanifest" />
-  <meta name="theme-color" content="#1e88e5" />  <style>
-    :root {
-      --bg: #0f172a;
-      --card-bg: rgba(15, 23, 42, 0.94);
-      --card-border: rgba(148, 163, 184, 0.35);
-      --accent: #22c55e;
-      --accent-soft: rgba(34, 197, 94, 0.14);
-      --accent-strong: #16a34a;
-      --text: #e5e7eb;
-      --muted: #9ca3af;
-      --danger: #ef4444;
-      --chip-bg: rgba(15, 23, 42, 0.8);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      overflow: hidden;
-    }
-
-    body {
-      position: relative;
-    }
-
-    #map {
-      position: absolute;
-      inset: 0;
-      z-index: 1;
-    }
-
-    /* App header badge */
-    #app-header {
-      position: absolute;
-      top: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      border-radius: 999px;
-      background: rgba(15, 23, 42, 0.88);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      font-size: 13px;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
-    }
-
-    #app-header-logo {
-      width: 22px;
-      height: 22px;
-      border-radius: 9px;
-      background: radial-gradient(circle at 30% 30%, #22c55e, #0ea5e9);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      font-weight: 700;
-      color: #0b1120;
-    }
-
-    #app-header-title {
-      font-weight: 600;
-      letter-spacing: 0.03em;
-    }
-
-    .legend {
-                line-height: 18px;
-                color: #333;
-                background: #fff;
-                padding: 6px 8px;
-                font: 12px/14px Arial, Helvetica, sans-serif;
-                box-shadow: 0 0 15px rgba(0,0,0,.2);
-                border-radius: 5px;
-            }
-
-            .legend i {
-                width: 14px;
-                height: 14px;
-                display: inline-block;
-                vertical-align: middle;
-                margin-right: 6px;
-                border-radius: 50%;
-            }
-
-            .leaflet-tooltip {
-                white-space: normal !important;
-                word-wrap: break-word;
-                max-width: 1000px !important;
-                min-width: 400px;
-                font-size: 14px;
-            }
-    
-    /* Navigation HUD chip */
-    #nav-hud {
-      position: absolute;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 5;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: var(--chip-bg);
-      color: var(--muted);
-      font-size: 12px;
-      white-space: nowrap;
-      max-width: calc(100% - 24px);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      backdrop-filter: blur(6px);
-    }
-
-    /* Info text in bottom panel */
-    #info-text {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* Floating primary button (locate) */
-    #fab-locate {
-      position: absolute;
-      right: 12px;
-      bottom: 168px;
-      z-index: 5;
-      width: 46px;
-      height: 46px;
-      border-radius: 999px;
-      border: none;
-      background: #0ea5e9;
-      color: #0b1120;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
-      font-size: 22px;
-      cursor: pointer;
-    }
-
-    /* Floating toggle for main panel */
-    #fab-panel {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 10px;
-      z-index: 5;
-      width: 54px;
-      height: 54px;
-      border-radius: 999px;
-      border: none;
-      background: var(--accent);
-      color: #022c22;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 14px 35px rgba(15, 23, 42, 0.9);
-      font-size: 24px;
-      cursor: pointer;
-    }
-
-    #fab-panel span {
-      transform: translateY(-1px);
-    }
-
-    /* Main control panel (bottom sheet) */
-    #control-panel {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      z-index: 4;
-
-      padding: 10px 12px 14px;
-      background: var(--card-bg);
-      border-top-left-radius: 18px;
-      border-top-right-radius: 18px;
-      border-top: 1px solid var(--card-border);
-      box-shadow: 0 -12px 30px rgba(15, 23, 42, 0.9);
-      transform: translateY(calc(100% - 56px));  /* only ~56px remains visible */
-      transition: transform 0.28s ease;
-     /* Layout */
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-
-      /* NEW: scrolling when open */
-      max-height: 65vh;                    /* panel never covers more than ~65% of screen height */
-      overflow-y: auto;                    /* show scrollbar when content is taller */
-      -webkit-overflow-scrolling: touch;   /* smooth scrolling on mobile */
-    }
-
-    #control-panel.open {
-      transform: translateY(0);
-    }
-
-    #panel-top-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-    }
-
-    #panel-title {
-      font-size: 13px;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    #panel-actions {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .pill-button {
-      padding: 4px 9px;
-      border-radius: 9px;
-      border: 1px solid rgba(148, 163, 184, 0.5);
-      background: rgba(15, 23, 42, 0.6);
-      color: var(--muted);
-      font-size: 11px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .pill-button span.emoji {
-      font-size: 13px;
-    }
-
-    .pill-button.primary {
-      background: var(--accent-soft);
-      color: var(--accent-strong);
-      border-color: var(--accent-strong);
-    }
-
-    .pill-button.danger {
-      background: rgba(239, 68, 68, 0.15);
-      color: #fecaca;
-      border-color: rgba(239, 68, 68, 0.7);
-    }
-
-    /* Heading marker (your car) */
-    .heading-marker {
-      width: 26px;
-      height: 26px;
-      border-radius: 9px;
-      background: rgba(34, 197, 94, 0.16);
-      border: 2px solid #22c55e;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.6);
-    }
-
-    .heading-marker-arrow {
-      width: 0;
-      height: 0;
-      border-left: 6px solid transparent;
-      border-right: 6px solid transparent;
-      border-bottom: 11px solid #22c55e;
-      transform-origin: 50% 80%;
-      transform: rotate(0deg);
-    }
-
-    /* Sections inside panel */
-    .panel-section {
-      border-radius: 12px;
-      padding: 8px 9px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(148, 163, 184, 0.35);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .section-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 12px;
-      cursor: pointer;
-    }
-
-    .section-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-weight: 500;
-    }
-
-    .section-title span.emoji {
-      font-size: 14px;
-    }
-
-    .section-toggle-icon {
-      font-size: 14px;
-      color: var(--muted);
-    }
-
-    .section-body {
-      margin-top: 4px;
-      display: grid;
-      gap: 6px;
-    }
-
-    .section-body.collapsed {
-      display: none;
-    }
-
-    /* Inputs */
-    input[type="text"],
-    select,
-    textarea {
-      width: 100%;
-      border-radius: 8px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      padding: 6px 8px;
-      font-size: 13px;
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--text);
-    }
-
-    textarea {
-      min-height: 100px;
-      resize: vertical;
-    }
-
-    /* Small buttons */
-    .btn {
-      border-radius: 9px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: rgba(15, 23, 42, 0.9);
-      padding: 5px 9px;
-      font-size: 11px;
-      color: var(--muted);
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      white-space: nowrap;
-    }
-
-    .btn.primary {
-      background: var(--accent-soft);
-      color: var(--accent-strong);
-      border-color: var(--accent-strong);
-    }
-
-    .btn.full {
-      justify-content: center;
-      width: 100%;
-    }
-
-    .btn.small {
-      font-size: 10px;
-      padding: 3px 7px;
-    }
-
-    .btn-icon {
-      font-size: 13px;
-    }
-
-    .btn-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .two-col {
-      display: grid;
-      grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-      gap: 6px;
-    }
-
-    .inline-label {
-      font-size: 11px;
-      color: var(--muted);
-      display: block;
-      margin-bottom: 2px;
-    }
-
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    .checkbox-row input[type="checkbox"] {
-      accent-color: var(--accent);
-    }
-
-    .small-text {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* Trip modal */
-    #trip-modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    #trip-modal {
-      width: min(460px, calc(100% - 32px));
-      max-height: calc(100% - 80px);
-      background: #020617;
-      border-radius: 16px;
-      padding: 12px 14px 14px;
-      border: 1px solid rgba(148, 163, 184, 0.65);
-      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.95);
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    #trip-modal-title {
-      font-size: 14px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    #trip-modal-title span.left {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    #trip-modal-list {
-      flex: 1;
-      overflow-y: auto;
-      border-radius: 10px;
-      padding: 6px 6px 4px;
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid rgba(51, 65, 85, 0.8);
-      font-size: 12px;
-    }
-
-    .trip-item-row {
-      display: grid;
-      grid-template-columns: auto 1fr auto;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 4px;
-      border-radius: 8px;
-      margin-bottom: 3px;
-      background: rgba(15, 23, 42, 0.8);
-    }
-
-    .trip-item-row:nth-child(odd) {
-      background: rgba(15, 23, 42, 0.95);
-    }
-
-    .trip-item-name {
-      font-size: 12px;
-      color: var(--text);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .trip-item-order {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .trip-item-order button {
-      padding: 1px 6px;
-      font-size: 11px;
-      border-radius: 9px;
-      border: 1px solid rgba(148, 163, 184, 0.6);
-      background: rgba(15, 23, 42, 0.9);
-      color: var(--muted);
-      cursor: pointer;
-    }
-
-    #trip-modal-footer {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    #trip-modal-footer .btn {
-      flex: 1;
-    }
-
-    /* Import file input */
-    #file-input {
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* Collapsible, compact legend / layers chip */
-
-    #layer-legend {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      z-index: 5;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-        sans-serif;
-    }
-
-    /* Toggle button (always visible) */
-    #legend-toggle {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.25rem;
-      padding: 0.25rem 0.55rem;
-      font-size: 0.7rem;
-      border-radius: 999px;
-      border: 1px solid rgba(15, 23, 42, 0.15);
-      background: rgba(255, 255, 255, 0.95);
-      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
-      color: #111827;
-      cursor: pointer;
-    }
-
-    #legend-toggle:active {
-      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25) inset;
-    }
-
-    #legend-toggle-label {
-      font-weight: 500;
-    }
-
-    #legend-toggle-icon {
-      font-size: 0.65rem;
-      opacity: 0.7;
-    }
-
-    /* Inner content (only when expanded) */
-    #legend-inner {
-      margin-top: 0.35rem;
-      background: rgba(255, 255, 255, 0.97);
-      border-radius: 10px;
-      padding: 0.4rem 0.5rem;
-      box-shadow: 0 3px 10px rgba(15, 23, 42, 0.22);
-      font-size: 0.7rem;
-      min-width: 180px;
-    }
-
-    /* Collapsed state: hide inner */
-    #layer-legend.collapsed #legend-inner {
-      display: none;
-    }
-
-    /* Expanded state: toggle icon direction */
-    #layer-legend.collapsed #legend-toggle-icon {
-      transform: rotate(180deg);
-    }
-
-    /* Legend internals */
-    .legend-section {
-      display: flex;
-      flex-direction: column;
-      gap: 0.15rem;
-    }
-
-    .legend-title {
-      font-size: 0.72rem;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 0.2rem;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      cursor: pointer;
-    }
-
-    .legend-item input[type="checkbox"] {
-      width: 14px;
-      height: 14px;
-    }
-
-    .legend-swatch {
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      border: 1px solid rgba(15, 23, 42, 0.15);
-    }
-
-    /* Match your existing colours */
-    .legend-swatch.day {
-      background: #2563eb; /* blue – day program / centre */
-    }
-
-    .legend-swatch.medical {
-      background: #16a34a; /* green – medical / allied health */
-    }
-
-    $1
-
-    .legend-swatch.poi-water {
-      background: #0ea5e9; /* blue – water refill */
-    }
-
-    .legend-swatch.poi-toilets {
-      background: #a855f7; /* purple – public toilets */
-    }
-
-    .legend-swatch.poi-participant {
-      background: #facc15; /* yellow – participant places */
-    }
-
-    .legend-text {
-      white-space: nowrap;
-    }
-
-    /* Slightly bigger touch targets on small screens */
-    @media (max-width: 768px) {
-      #legend-toggle {
-        padding: 0.3rem 0.7rem;
-        font-size: 0.75rem;
-      }
-      #legend-inner {
-        font-size: 0.75rem;
-      }
-    }
-
-
-
-    /* Mobile tweaks */
-    @media (max-width: 768px) {
-      #control-panel {
-        padding: 8px 10px 12px;
-      }
-      #panel-title {
-        font-size: 12px;
-      }
-      .panel-section {
-        padding: 7px 8px;
-      }
-      .two-col {
-        grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-      }
-      #fab-locate {
-        bottom: 155px;
-      }
-    }
-  </style></head>
+  />
+
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#1e88e5" />
+<style>
+ :root {
+  --bg: #0f172a;
+  --card-bg: rgba(15, 23, 42, 0.9);
+  --card-border: rgba(148, 163, 184, 0.35);
+  --accent: #22c55e;
+  --accent-soft: rgba(34, 197, 94, 0.14);
+  --accent-strong: #16a34a;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --danger: #ef4444;
+  --chip-bg: rgba(15, 23, 42, 0.8);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+body {
+  position: relative;
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* App header badge */
+#app-header {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  font-size: 13px;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
+}
+
+#app-header-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 9px;
+  background: radial-gradient(circle at 30% 30%, #22c55e, #0ea5e9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #0b1120;
+}
+
+#app-header-title {
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+/* Old Leaflet legend bits (kept in case you still use them anywhere) */
+.legend {
+  line-height: 18px;
+  color: #333;
+  background: #fff;
+  padding: 6px 8px;
+  font: 12px/14px Arial, Helvetica, sans-serif;
+  box-shadow: 0 0 15px rgba(0, 0, 0, .2);
+  border-radius: 5px;
+}
+
+.legend i {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+  border-radius: 50%;
+}
+
+.leaflet-tooltip {
+  white-space: normal !important;
+  word-wrap: break-word;
+  max-width: 1000px !important;
+  min-width: 400px;
+  font-size: 14px;
+}
+
+/* Navigation HUD chip */
+#nav-hud {
+  position: absolute;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  backdrop-filter: blur(6px);
+}
+
+/* Info text in bottom panel */
+#info-text {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Floating primary button (locate) */
+#fab-locate {
+  position: absolute;
+  right: 12px;
+  bottom: 168px;
+  z-index: 5;
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  border: none;
+  background: #0ea5e9;
+  color: #0b1120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.7);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+/* Floating toggle for main panel */
+/* Floating toggle for main panel – right edge */
+#fab-panel {
+  position: absolute;
+  right: 12px;
+  bottom: 50%;
+  transform: translateY(50%);
+  z-index: 5;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: none;
+  background: var(--accent);
+  color: #022c22;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.9);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+#fab-panel span {
+  transform: translateY(-1px);
+}
+
+/* Main control panel – RIGHT SIDE SHEET, not bottom */
+#control-panel {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  z-index: 4;
+
+  width: min(360px, 88vw);
+
+  padding: 10px 12px 14px;
+  background: var(--card-bg);
+  border-radius: 18px;
+  border: 1px solid var(--card-border);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.9);
+
+  /* Slide in/out horizontally */
+  transform: translateX(110%);        /* hidden off the right edge by default */
+  transition: transform 0.28s ease;
+
+  /* Layout */
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  /* Scrollable content, full height */
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* When open, bring the panel fully into view */
+#control-panel.open {
+  transform: translateX(0);
+}
+
+/* Mobile tweaks – slightly narrower & less tall */
+@media (max-width: 768px) {
+  #control-panel {
+    width: min(330px, 92vw);
+    top: 8px;
+    right: 8px;
+    bottom: 8px;
+    padding: 8px 10px 12px;
+  }
+
+  #fab-panel {
+    right: 8px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+}
+
+
+
+#panel-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+#panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+#panel-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pill-button {
+  padding: 4px 9px;
+  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pill-button span.emoji {
+  font-size: 13px;
+}
+
+.pill-button.primary {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.pill-button.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.7);
+}
+
+/* Heading marker (your car) */
+.heading-marker {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  background: rgba(34, 197, 94, 0.16);
+  border: 2px solid #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.6);
+}
+
+.heading-marker-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-bottom: 11px solid #22c55e;
+  transform-origin: 50% 80%;
+  transform: rotate(0deg);
+}
+
+/* Sections inside panel */
+.panel-section {
+  border-radius: 12px;
+  padding: 8px 9px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.section-title span.emoji {
+  font-size: 14px;
+}
+
+.section-toggle-icon {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.section-body {
+  margin-top: 4px;
+  display: grid;
+  gap: 6px;
+}
+
+.section-body.collapsed {
+  display: none;
+}
+
+/* Inputs */
+input[type="text"],
+select,
+textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  padding: 6px 8px;
+  font-size: 13px;
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--text);
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+/* Small buttons */
+.btn {
+  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.9);
+  padding: 5px 9px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.btn.primary {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.btn.full {
+  justify-content: center;
+  width: 100%;
+}
+
+.btn.small {
+  font-size: 10px;
+  padding: 3px 7px;
+}
+
+.btn-icon {
+  font-size: 13px;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.two-col {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 6px;
+}
+
+.inline-label {
+  font-size: 11px;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.checkbox-row input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.small-text {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Trip modal */
+#trip-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+#trip-modal {
+  width: min(460px, calc(100% - 32px));
+  max-height: calc(100% - 80px);
+  background: #020617;
+  border-radius: 16px;
+  padding: 12px 14px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.95);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#trip-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#trip-modal-title span.left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#trip-modal-list {
+  flex: 1;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 6px 6px 4px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  font-size: 12px;
+}
+
+.trip-item-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 4px;
+  border-radius: 8px;
+  margin-bottom: 3px;
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.trip-item-row:nth-child(odd) {
+  background: rgba(15, 23, 42, 0.95);
+}
+
+.trip-item-name {
+  font-size: 12px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.trip-item-order {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trip-item-order button {
+  padding: 1px 6px;
+  font-size: 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background: rgba(15, 23, 42, 0.9);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+#trip-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+#trip-modal-footer .btn {
+  flex: 1;
+}
+
+/* POI layer modal */
+#poi-layer-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+#poi-layer-modal {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100% - 80px);
+  background: #020617;
+  border-radius: 16px;
+  padding: 12px 14px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.65);
+  box-shadow: 0 25px 60px rgba(15, 23, 42, 0.95);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+#poi-layer-modal-title {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.swatch-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.swatch-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 9px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.4);
+}
+
+.swatch-btn.selected {
+  border-color: #e5e7eb;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.5);
+}
+
+#poi-search-results {
+  display: grid;
+  gap: 6px;
+  max-height: 140px;
+  overflow-y: auto;
+  border-radius: 10px;
+  padding: 6px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(51, 65, 85, 0.8);
+  font-size: 11px;
+}
+
+.poi-search-item {
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  cursor: pointer;
+}
+
+.poi-search-item.selected {
+  border-color: rgba(34, 197, 94, 0.9);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.poi-modal-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.poi-modal-row {
+  display: grid;
+  gap: 6px;
+}
+
+.poi-modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Import file input */
+#file-input {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* Collapsible, compact legend / layers chip */
+#layer-legend {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 5;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+}
+
+/* Toggle button (always visible) */
+#legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+  color: #111827;
+  cursor: pointer;
+}
+
+#legend-toggle:active {
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.25) inset;
+}
+
+#legend-toggle-label {
+  font-weight: 500;
+}
+
+#legend-toggle-icon {
+  font-size: 0.65rem;
+  opacity: 0.7;
+}
+
+.legend-swatch.poi-park {
+  background: #22c55e; /* greenish for parks */
+}
+
+.legend-swatch.poi-food {
+  background: #fbbf24; /* yellow/orange for food */
+}
+
+.legend-swatch.poi-participant {
+  background: #a855f7; /* purple for participant places */
+}
+
+/* Inner content (only when expanded) */
+#legend-inner {
+  margin-top: 0.35rem;
+  background: rgba(255, 255, 255, 0.97);
+  border-radius: 10px;
+  padding: 0.4rem 0.5rem;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.22);
+  font-size: 0.7rem;
+  min-width: 180px;
+}
+
+/* Collapsed state: hide inner */
+#layer-legend.collapsed #legend-inner {
+  display: none;
+}
+
+/* Expanded state: toggle icon direction */
+#layer-legend.collapsed #legend-toggle-icon {
+  transform: rotate(180deg);
+}
+
+/* Legend internals */
+.legend-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.legend-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.2rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+}
+
+.legend-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(15, 23, 42, 0.15);
+}
+
+/* Match your existing colours */
+.legend-swatch.day {
+  background: #2563eb; /* blue – day program / centre */
+}
+
+.legend-swatch.medical {
+  background: #16a34a; /* green – medical / allied health */
+}
+
+.legend-swatch.social {
+  background: #f97316; /* orange – social / activities */
+}
+
+.legend-swatch.poi-park {
+  background: #22c55e; /* parks */
+}
+
+.legend-swatch.poi-food {
+  background: #eab308; /* food / cafés */
+}
+
+.legend-swatch.poi-participant {
+  background: #a855f7; /* participant places */
+}
+.legend-swatch.poi-toilets {
+  background: #0ea5e9; /* bright blue for toilets */
+}
+
+.legend-swatch.poi-water {
+  background: #38bdf8; /* lighter aqua for drinking water */
+}
+
+.legend-text {
+  white-space: nowrap;
+}
+
+/* Slightly bigger touch targets on small screens */
+@media (max-width: 768px) {
+  #legend-toggle {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+  }
+  #legend-inner {
+    font-size: 0.75rem;
+  }
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+  #control-panel {
+    padding: 8px 10px 12px;
+    max-width: none;            /* full width on phones */
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+  }
+
+  #panel-title {
+    font-size: 12px;
+  }
+
+  .panel-section {
+    padding: 7px 8px;
+  }
+
+  .two-col {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  }
+
+  #fab-locate {
+    bottom: 155px;
+  }
+}
+</style>
+</head>
 <body>
   <!-- App header chip -->
   <div id="app-header">
     <div id="app-header-logo">😊</div>
     <div id="app-header-title">OSM Route Planner</div>
-  </div>  <!-- Navigation HUD -->  <div id="nav-hud">No route active yet.</div>  <!-- Map -->  <div id="map"></div>
+  </div>
+
+  <!-- Navigation HUD -->
+  <div id="nav-hud">No route active yet.</div>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Legend / Layers chip -->
   <div id="layer-legend" class="collapsed">
     <button id="legend-toggle" type="button">
       <span id="legend-toggle-label">Layers</span>
       <span id="legend-toggle-icon">▲</span>
-    </button><div id="legend-inner">
+    </button>
 
-  </div>   <!-- Floating locate button -->  <button id="fab-locate" title="Locate me">
-    ⬤
-  </button>  <!-- Floating panel toggle -->  <button id="fab-panel" title="Show controls">
+    <div id="legend-inner">
+      <div class="legend-section">
+        <div class="legend-title">Centres</div>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="centres-day" checked />
+          <span class="legend-swatch day"></span>
+          <span class="legend-text">Day programs / centres</span>
+        </label>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="centres-medical" checked />
+          <span class="legend-swatch medical"></span>
+          <span class="legend-text">Medical / allied health</span>
+        </label>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="centres-social" checked />
+          <span class="legend-swatch social"></span>
+          <span class="legend-text">Social / activities</span>
+        </label>
+      </div>
+
+      <div class="legend-section">
+        <div class="legend-title">POI layers</div>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="poi-parks" checked />
+          <span class="legend-swatch poi-park"></span>
+          <span class="legend-text">Parks</span>
+        </label>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="poi-food" checked />
+          <span class="legend-swatch poi-food"></span>
+          <span class="legend-text">Food / cafés</span>
+        </label>
+
+        <label class="legend-item">
+          <input type="checkbox" data-layer="poi-participant" checked />
+          <span class="legend-swatch poi-participant"></span>
+          <span class="legend-text">Participant places</span>
+        </label>
+        <label class="legend-item">
+  <input type="checkbox" data-layer="poi-toilets" checked />
+  <span class="legend-swatch poi-toilets"></span>
+  <span class="legend-text">Toilets</span>
+</label>
+
+<label class="legend-item">
+  <input type="checkbox" data-layer="poi-water" checked />
+  <span class="legend-swatch poi-water"></span>
+  <span class="legend-text">Water fountains</span>
+</label>
+      </div>
+      
+
+    </div>
+  </div>
+
+  <!-- Floating locate button -->
+  <button id="fab-locate" title="Locate me">⬤</button>
+
+  <!-- Floating panel toggle -->
+  <button id="fab-panel" title="Show controls">
     <span>☰</span>
-  </button>  <!-- Bottom control panel -->  <div id="control-panel">
+  </button>
+
+  <!-- Bottom control panel -->
+  <div id="control-panel">
     <div id="panel-top-row">
       <div id="panel-title">Trip & map controls</div>
       <div id="panel-actions">
-        <button id="btn-follow-toggle" class="pill-button" type="button">
+        <button id="btn-follow-toggle" class="pill-button primary" type="button">
           <span class="emoji">📡</span>
           <span id="btn-follow-label">Follow map: ON</span>
         </button>
@@ -711,229 +937,239 @@
           <span class="emoji">⏹</span> Stop
         </button>
       </div>
-    </div><div id="info-text">
-  Tap the map or search to add stops. Build a trip, then start navigation.
-</div>
-
-<!-- SEARCH + FAVOURITES -->
-<div class="panel-section">
-  <div class="section-header" data-section="search">
-    <div class="section-title">
-      <span class="emoji">🔍</span>
-      <span>Search & favourites</span>
     </div>
-    <div class="section-toggle-icon">▾</div>
-  </div>
-  <div class="section-body" data-section-body="search">
-    <div class="two-col">
-      <div>
-        <label class="inline-label" for="search-input">Search for a place</label>
-        <input
-          id="search-input"
-          type="text"
-          placeholder="e.g. 46 Strathcona Ave Clapham SA"
-          autocomplete="off"
-        />
+
+    <div id="info-text">
+      Tap the map or search to add stops. Build a trip, then start navigation.
+    </div>
+
+    <!-- SEARCH + FAVOURITES -->
+    <div class="panel-section">
+      <div class="section-header" data-section="search">
+        <div class="section-title">
+          <span class="emoji">🔍</span>
+          <span>Search & favourites</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
       </div>
-      <div class="btn-row" style="align-self:flex-end; justify-content:flex-end;">
-        <button id="search-btn" class="btn primary" type="button">
-          <span class="btn-icon">🔎</span>
-          Search
-        </button>
-      </div>
-    </div>
+      <div class="section-body" data-section-body="search">
+        <div class="two-col">
+          <div>
+            <label class="inline-label" for="search-input">Search for a place</label>
+            <input
+              id="search-input"
+              type="text"
+              placeholder="e.g. 46 Strathcona Ave Clapham SA"
+              autocomplete="off"
+            />
+          </div>
+          <div class="btn-row" style="align-self:flex-end; justify-content:flex-end;">
+            <button id="search-btn" class="btn primary" type="button">
+              <span class="btn-icon">🔎</span>
+              Search
+            </button>
+          </div>
+        </div>
 
-    <div class="btn-row">
-      <button id="add-search-waypoint-btn" class="btn small" type="button">
-        <span class="btn-icon">➕</span> Add as waypoint
-      </button>
-      <button id="save-favourite-btn" class="btn small" type="button">
-        <span class="btn-icon">⭐</span> Save as favourite
-      </button>
-      <button id="locate-btn" class="btn small" type="button">
-        <span class="btn-icon">📍</span> Use my location
-      </button>
-    </div>
-
-    <div class="two-col">
-      <div>
-        <label class="inline-label" for="fav-folder-select">Folder</label>
         <div class="btn-row">
-          <select id="fav-folder-select"></select>
-          <button id="fav-new-folder-btn" class="btn small" type="button">
-            <span class="btn-icon">📂</span> New
+          <button id="add-search-waypoint-btn" class="btn small" type="button">
+            <span class="btn-icon">➕</span> Add as waypoint
+          </button>
+          <button id="save-favourite-btn" class="btn small" type="button">
+            <span class="btn-icon">⭐</span> Save as favourite
+          </button>
+          <button id="locate-btn" class="btn small" type="button">
+            <span class="btn-icon">📍</span> Use my location
           </button>
         </div>
-      </div>
-      <div>
-        <label class="inline-label" for="favourites-select">Favourites</label>
-        <select id="favourites-select">
-          <option value="">(none yet)</option>
-        </select>
-      </div>
-    </div>
 
-    <div class="two-col">
-      <div class="btn-row">
-        <button id="fav-go-btn" class="btn small" type="button">
-          <span class="btn-icon">🎯</span> Go to favourite
-        </button>
-        <button id="fav-add-waypoint-btn" class="btn small" type="button">
-          <span class="btn-icon">🧭</span> Add fav as waypoint
-        </button>
-      </div>
-      <div>
-        <label class="inline-label" for="fav-target-folder-select">Copy to folder</label>
-        <div class="btn-row">
-          <select id="fav-target-folder-select"></select>
-          <button id="fav-copy-to-folder-btn" class="btn small" type="button">
-            <span class="btn-icon">➕</span> Add
-          </button>
+        <div class="two-col">
+          <div>
+            <label class="inline-label" for="fav-folder-select">Folder</label>
+            <div class="btn-row">
+              <select id="fav-folder-select"></select>
+              <button id="fav-new-folder-btn" class="btn small" type="button">
+                <span class="btn-icon">📂</span> New
+              </button>
+            </div>
+          </div>
+          <div>
+            <label class="inline-label" for="favourites-select">Favourites</label>
+            <select id="favourites-select">
+              <option value="">(none yet)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="btn-row">
+            <button id="fav-go-btn" class="btn small" type="button">
+              <span class="btn-icon">🎯</span> Go to favourite
+            </button>
+            <button id="fav-add-waypoint-btn" class="btn small" type="button">
+              <span class="btn-icon">🧭</span> Add fav as waypoint
+            </button>
+          </div>
+          <div>
+            <label class="inline-label" for="fav-target-folder-select">Copy to folder</label>
+            <div class="btn-row">
+              <select id="fav-target-folder-select"></select>
+              <button id="fav-copy-to-folder-btn" class="btn small" type="button">
+                <span class="btn-icon">➕</span> Add
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- ROUTE -->
-<div class="panel-section">
-  <div class="section-header" data-section="route">
-    <div class="section-title">
-      <span class="emoji">🗺️</span>
-      <span>Route & waypoints</span>
+    <!-- ROUTE -->
+    <div class="panel-section">
+      <div class="section-header" data-section="route">
+        <div class="section-title">
+          <span class="emoji">🗺️</span>
+          <span>Route & waypoints</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="route">
+        <div class="checkbox-row">
+          <input type="checkbox" id="route-mode-checkbox" />
+          <label for="route-mode-checkbox">Route mode (tap map to add waypoints)</label>
+        </div>
+        <div class="btn-row">
+          <button id="clear-route-btn" class="btn small danger" type="button">
+            <span class="btn-icon">🧹</span> Clear route
+          </button>
+        </div>
+        <div class="small-text">
+          In route mode, each tap adds a stop. Otherwise, taps just move a single marker.
+        </div>
+      </div>
     </div>
-    <div class="section-toggle-icon">▾</div>
-  </div>
-  <div class="section-body" data-section-body="route">
-    <div class="checkbox-row">
-      <input type="checkbox" id="route-mode-checkbox" />
-      <label for="route-mode-checkbox">Route mode (tap map to add waypoints)</label>
-    </div>
-    <div class="btn-row">
-      <button id="clear-route-btn" class="btn small danger" type="button">
-        <span class="btn-icon">🧹</span> Clear route
-      </button>
-    </div>
-    <div class="small-text">
-      In route mode, each tap adds a stop. Otherwise, taps just move a single marker.
-    </div>
-  </div>
-</div>
-
 <!-- PLACES & LAYERS -->
-<div class="panel-section">
-  <div class="section-header" data-section="places">
-    <div class="section-title">
-      <span class="emoji">📍</span>
-      <span>Places & layers</span>
-    </div>
-    <div class="section-toggle-icon">▾</div>
-  </div>
-  <div class="section-body" data-section-body="places">
-    <div>
-      <label class="inline-label" for="places-layer-select">Active layer</label>
-      <select id="places-layer-select">
-        <option value="">(no layer yet)</option>
-        <option value="poi-parks">Parks</option>
-        <option value="poi-food">Food / cafés</option>
-        <option value="poi-participant">Participant places</option>
-      </select>
-    </div>
-    <div class="small-text">
-      Use layers for parks, food, participant places, etc. Add from your
-      last tap or search, and toggle via the Layers chip.
-    </div>
-    <div class="btn-row">
-      <button id="places-add-lasttap-btn" class="btn small" type="button">
-        <span class="btn-icon">👉</span> Add from last tap
-      </button>
-      <button id="places-add-search-btn" class="btn small" type="button">
-        <span class="btn-icon">📍</span> Add from search
-      </button>
-    </div>
-    <div class="btn-row">
-      <button id="places-clear-layer-btn" class="btn small danger" type="button">
-        <span class="btn-icon">🧹</span> Clear this layer
-      </button>
-    </div>
-  </div>
-</div>
+    <!-- PLACES & LAYERS -->
+    <div class="panel-section">
+      <div class="section-header" data-section="places">
+        <div class="section-title">
+          <span class="emoji">📍</span>
+          <span>Places & layers</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
 
-<!-- TRIP -->
-<div class="panel-section">
-  <div class="section-header" data-section="trip">
-    <div class="section-title">
-      <span class="emoji">🚐</span>
-      <span>Trip builder</span>
-    </div>
-    <div id="nav-row">
-      <label>
-        <input type="checkbox" id="nav-mode-checkbox" />
-        Nav mode (follow & rotate)
-      </label>
+      <div class="section-body" data-section-body="places">
+        <div class="two-col">
+          <div>
+            <label class="inline-label" for="places-layer-select">Active layer</label>
+            <select id="places-layer-select"></select>
+          </div>
+          <div class="btn-row" style="align-self:flex-end; justify-content:flex-end;">
+            <button id="places-new-layer-btn" class="btn small" type="button">
+              <span class="btn-icon">➕</span> New layer
+            </button>
+          </div>
+        </div>
+
+        <div class="small-text">
+          Use layers for parks, food, participant places, etc.
+          Add from your last tap or search, and toggle via the Layers chip.
+        </div>
+
+        <div class="btn-row">
+          <button id="places-add-from-tap-btn" class="btn small" type="button">
+            <span class="btn-icon">👆</span> Add from last tap
+          </button>
+          <button id="places-add-from-search-btn" class="btn small" type="button">
+            <span class="btn-icon">🔎</span> Add from search
+          </button>
+        </div>
+
+        <div class="btn-row">
+          <button id="places-clear-layer-btn" class="btn small danger" type="button">
+            <span class="btn-icon">🧹</span> Clear this layer
+          </button>
+          <button id="places-edit-layer-btn" class="btn small" type="button">
+            <span class="btn-icon">✏️</span> Edit layer
+          </button>
+          <button id="places-delete-layer-btn" class="btn small danger" type="button">
+            <span class="btn-icon">🗑</span> Delete layer
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="section-toggle-icon">▾</div>
-  </div>
-  <div class="section-body" data-section-body="trip">
-    <div class="small-text">
-      Build a trip from favourites in the current folder. Choose stops and order them, then apply as a route.
-    </div>
-    <div class="btn-row">
-      <button id="trip-open-btn" class="btn primary full" type="button">
-        <span class="btn-icon">🧩</span> Plan trip from this folder
-      </button>
-    </div>
-  </div>
-</div>
 
-<!-- NOTES -->
-<div class="panel-section">
-  <div class="section-header" data-section="notes">
-    <div class="section-title">
-      <span class="emoji">📝</span>
-      <span>Trip notes</span>
+    <!-- TRIP -->
+    <div class="panel-section">
+      <div class="section-header" data-section="trip">
+        <div class="section-title">
+          <span class="emoji">🚐</span>
+          <span>Trip builder</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="trip">
+        <div class="small-text">
+          Build a trip from favourites in the current folder. Choose stops and order them, then apply as a route.
+        </div>
+        <div class="btn-row">
+          <button id="trip-open-btn" class="btn primary full" type="button">
+            <span class="btn-icon">🧩</span> Plan trip from this folder
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="section-toggle-icon">▾</div>
-  </div>
-  <div class="section-body" data-section-body="notes">
-    <textarea
-      id="notes-textarea"
-      placeholder="Write notes about this run, participants, timing, reminders, etc."
-    ></textarea>
-  </div>
-</div>
 
-<!-- IMPORT -->
-<div class="panel-section">
-  <div class="section-header" data-section="import">
-    <div class="section-title">
-      <span class="emoji">📁</span>
-      <span>Import routes</span>
+    <!-- NOTES -->
+    <div class="panel-section">
+      <div class="section-header" data-section="notes">
+        <div class="section-title">
+          <span class="emoji">📝</span>
+          <span>Trip notes</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="notes">
+        <textarea
+          id="notes-textarea"
+          placeholder="Write notes about this run, participants, timing, reminders, etc."
+        ></textarea>
+      </div>
     </div>
-    <div class="section-toggle-icon">▾</div>
-  </div>
-  <div class="section-body" data-section-body="import">
-    <div class="small-text">
-      Import KML, KMZ, GPX, or GeoJSON files to show saved routes and points.
-    </div>
-    <label for="file-input" class="inline-label">Select files to import</label>
-    <input
-      id="file-input"
-      type="file"
-      multiple
-      accept=".kml,.kmz,.gpx,.geojson,.json"
-      title="Select KML, KMZ, GPX, or GeoJSON files"
-    />
-    <div class="btn-row">
-      <button id="clear-imports-btn" class="btn small" type="button">
-        <span class="btn-icon">🗑</span> Clear imported layers
-      </button>
-    </div>
-  </div>
-</div>
 
-  </div>  <!-- Trip modal -->  <div id="trip-modal-backdrop">
+    <!-- IMPORT -->
+    <div class="panel-section">
+      <div class="section-header" data-section="import">
+        <div class="section-title">
+          <span class="emoji">📁</span>
+          <span>Import routes</span>
+        </div>
+        <div class="section-toggle-icon">▾</div>
+      </div>
+      <div class="section-body" data-section-body="import">
+        <div class="small-text">
+          Import KML, KMZ, GPX, or GeoJSON files to show saved routes and points.
+        </div>
+        <label for="file-input" class="inline-label">Select files to import</label>
+        <input
+          id="file-input"
+          type="file"
+          multiple
+          accept=".kml,.kmz,.gpx,.geojson,.json"
+          title="Select KML, KMZ, GPX, or GeoJSON files"
+        />
+        <div class="btn-row">
+          <button id="clear-imports-btn" class="btn small" type="button">
+            <span class="btn-icon">🗑</span> Clear imported layers
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Trip modal -->
+  <div id="trip-modal-backdrop">
     <div id="trip-modal">
       <div id="trip-modal-title">
         <span class="left">
@@ -953,11 +1189,115 @@
         </button>
       </div>
     </div>
-  </div>  <!-- Leaflet JS -->  <script
+  </div>
+
+  <!-- POI layer modal -->
+  <div id="poi-layer-modal-backdrop">
+    <div id="poi-layer-modal">
+      <div id="poi-layer-modal-title">
+        <span class="left">
+          <span>📍</span>
+          <span id="poi-layer-modal-title-text">Edit POI layer</span>
+        </span>
+        <button id="poi-layer-modal-close-btn" class="btn small" type="button">✕</button>
+      </div>
+
+      <div class="poi-modal-grid">
+        <div class="poi-modal-row">
+          <label class="inline-label" for="poi-layer-name-input">Layer name</label>
+          <input id="poi-layer-name-input" type="text" placeholder="e.g. Toilets, Water, Cafes" />
+        </div>
+
+        <div class="poi-modal-row">
+          <label class="inline-label">Layer color</label>
+          <div class="swatch-row" id="poi-layer-color-swatches"></div>
+        </div>
+
+        <div class="poi-modal-row">
+          <label class="inline-label" for="poi-layer-notes-input">Layer notes</label>
+          <textarea id="poi-layer-notes-input" placeholder="Optional: access notes, hours, or key info."></textarea>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">
+            <span class="emoji">➕</span>
+            <span>Add a place to this layer</span>
+          </div>
+          <div class="section-body">
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-place-name-input">Place name</label>
+              <input id="poi-place-name-input" type="text" placeholder="e.g. City Park Fountain" />
+            </div>
+
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-place-type-select">Place type</label>
+              <select id="poi-place-type-select">
+                <option value="general">General</option>
+                <option value="toilet">Toilet</option>
+                <option value="water">Water fountain</option>
+                <option value="parking">Parking</option>
+                <option value="cafe">Cafe</option>
+                <option value="park">Park</option>
+                <option value="medical">Medical</option>
+                <option value="participant">Participant</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-address-search-input">Search address</label>
+              <div class="btn-row">
+                <input id="poi-address-search-input" type="text" placeholder="Search for an address or POI" />
+                <button id="poi-address-search-btn" class="btn small primary" type="button">
+                  <span class="btn-icon">🔎</span> Search
+                </button>
+              </div>
+            </div>
+
+            <div id="poi-search-results"></div>
+
+            <div class="checkbox-row">
+              <input type="checkbox" id="poi-share-layer-checkbox" />
+              <label for="poi-share-layer-checkbox">Also add to another layer</label>
+            </div>
+
+            <div class="poi-modal-row">
+              <label class="inline-label" for="poi-share-layer-select">Share with layer</label>
+              <select id="poi-share-layer-select" disabled></select>
+            </div>
+
+            <div class="poi-modal-actions">
+              <button id="poi-add-place-btn" class="btn primary full" type="button">
+                <span class="btn-icon">➕</span> Add place
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="poi-modal-actions">
+        <button id="poi-layer-modal-cancel-btn" class="btn" type="button">Cancel</button>
+        <button id="poi-layer-modal-save-btn" class="btn primary" type="button">Save layer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JS -->
+  <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
     crossorigin=""
-  ></script>  <!-- JSZip (for KMZ unzip) -->  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>  <!-- toGeoJSON (for KML/GPX -> GeoJSON) -->  <script src="https://unpkg.com/@tmcw/togeojson/dist/togeojson.umd.js"></script>  <script>
+  ></script>
+
+  <!-- JSZip (for KMZ unzip) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- toGeoJSON (for KML/GPX -> GeoJSON) -->
+  <script src="https://unpkg.com/@tmcw/togeojson/dist/togeojson.umd.js"></script>
+
+  <script src="findaseat.module.js"></script>
+
+<script>
     // ------------ Basic UI wiring (panel + sections) ------------
     const controlPanel = document.getElementById('control-panel');
     const panelToggleBtn = document.getElementById('fab-panel');
@@ -965,6 +1305,7 @@
     const infoText = document.getElementById('info-text');
     const navHud = document.getElementById('nav-hud');
     const notesTextarea = document.getElementById('notes-textarea');
+
 
     panelToggleBtn.addEventListener('click', () => {
       const isOpen = controlPanel.classList.toggle('open');
@@ -989,17 +1330,17 @@
       });
     });
 
-    // Default: collapse import section and notes slightly, keep search open
-    ['import'].forEach((sec) => {
+    // Default: collapse import and notes sections
+    ['import', 'notes'].forEach((sec) => {
       const body = document.querySelector(
         `.section-body[data-section-body="${sec}"]`
       );
-      const header = document.querySelector(
+      const headerIcon = document.querySelector(
         `.section-header[data-section="${sec}"] .section-toggle-icon`
       );
-      if (body && header) {
+      if (body && headerIcon) {
         body.classList.add('collapsed');
-        header.textContent = '▸';
+        headerIcon.textContent = '▸';
       }
     });
 
@@ -1017,61 +1358,6 @@
       }
     }
 
-    function restoreRouteFromStorage() {
-      let savedPoints = null;
-      let savedSummary = null;
-      try {
-        const pointsRaw = localStorage.getItem(ROUTE_KEY);
-        if (pointsRaw) {
-          savedPoints = JSON.parse(pointsRaw);
-        }
-        const summaryRaw = localStorage.getItem(ROUTE_SUMMARY_KEY);
-        if (summaryRaw) {
-          savedSummary = JSON.parse(summaryRaw);
-        }
-      } catch (e) {
-        console.error('Error restoring route from storage', e);
-      }
-
-      if (!Array.isArray(savedPoints) || !savedPoints.length) {
-        navHud.textContent = 'No route active yet.';
-        return;
-      }
-
-      // Recreate markers and polyline
-      routePoints = [];
-      routeMarkers.forEach((m) => map.removeLayer(m));
-      routeMarkers = [];
-      if (roadRoutePolyline) {
-        map.removeLayer(roadRoutePolyline);
-        roadRoutePolyline = null;
-      }
-
-      savedPoints.forEach(([lat, lng]) => {
-        routePoints.push([lat, lng]);
-        const marker = L.circleMarker([lat, lng], { radius: 5 }).addTo(map);
-        routeMarkers.push(marker);
-      });
-
-      // Call OSRM to rebuild the route line / summary
-      updateRoadRoute().catch((err) => console.error(err));
-
-      if (savedSummary && typeof savedSummary.distanceKm === 'number') {
-        lastRouteSummary = savedSummary;
-
-        const stopsCount = Array.isArray(savedPoints) ? savedPoints.length : 0;
-        const stopsLabel =
-          stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
-
-        navHud.textContent =
-          `Trip ready • ${stopsLabel} • ` +
-          `${savedSummary.distanceKm.toFixed(1)} km • ` +
-          `~${savedSummary.durationMin.toFixed(0)} min`;
-      } else {
-        navHud.textContent = 'Route restored. Distance will be recalculated.';
-      }
-    }
-
     function saveNotes() {
       try {
         localStorage.setItem(NOTES_KEY, notesTextarea.value);
@@ -1080,15 +1366,20 @@
       }
     }
 
-    notesTextarea.addEventListener('input', () => {
-      // Save on every change; they’re small
-      saveNotes();
-    });
-
+    notesTextarea.addEventListener('input', saveNotes);
     loadNotes();
 
-    // ------------ Map + core logic (adapted from previous versions) ------------
+    // ------------ Map + core logic ------------
     const map = L.map('map').setView([-34.9285, 138.6007], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    const adelaideMarker = L.marker([-34.9285, 138.6007]).addTo(map);
+    adelaideMarker.bindPopup('<b>Hello Ben!</b><br>This is Adelaide on OSM.');
 
     // --- Example centres/activities GeoJSON (Adelaide-ish demo data) ---
     const exampleCentresGeoJSON = {
@@ -1122,7 +1413,7 @@
           type: "Feature",
           geometry: {
             type: "Point",
-            coordinates: [138.53, -34.93] // Western suburbs
+            coordinates: [138.530, -34.930] // Western suburbs
           },
           properties: {
             name: "Western Allied Health Clinic",
@@ -1134,7 +1425,7 @@
           type: "Feature",
           geometry: {
             type: "Point",
-            coordinates: [138.65, -34.95] // Eastern suburbs
+            coordinates: [138.650, -34.950] // Eastern suburbs
           },
           properties: {
             name: "Eastern Recreation Group",
@@ -1143,20 +1434,9 @@
           }
         }
       ]
-    }; 
+    };
 
-
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    const adelaideMarker = L.marker([-34.9285, 138.6007]).addTo(map);
-    adelaideMarker.bindPopup('<b>Hello Ben!</b><br>This is Adelaide on OSM.');
-
-    // --- Build Leaflet layers from exampleCentresGeoJSON ---
+    // Build Leaflet layers from exampleCentresGeoJSON
     const centreLayers = {};
 
     centreLayers['centres-day'] = L.geoJSON(exampleCentresGeoJSON, {
@@ -1209,9 +1489,491 @@
 
     let clickMarker = null;
     let userLocationMarker = null;
+    let lastTapLatLng = null;     // [lat, lng] of last map tap
+    let lastTapLabel = null;      // optional description
+    // --- POI layers (parks, food, participant places) ---
+    
+    const POI_DEFAULTS = {
+      'poi-parks': {
+        id: 'poi-parks',
+        name: 'Parks',
+        color: '#16a34a',
+        isBuiltin: true,
+        notes: 'Green spaces and parklands.',
+        items: [
+          { lat: -34.9282, lng: 138.6009, label: 'Victoria Square', type: 'park' },
+          { lat: -34.9186, lng: 138.6025, label: 'Botanic Garden', type: 'park' }
+        ]
+      },
+      'poi-food': {
+        id: 'poi-food',
+        name: 'Food / cafes',
+        color: '#f97316',
+        isBuiltin: true,
+        notes: 'Food, cafes, and meal stops.',
+        items: [
+          { lat: -34.9327, lng: 138.5990, label: 'Central Market', type: 'cafe' },
+          { lat: -34.9256, lng: 138.6036, label: 'Rundle Street', type: 'cafe' }
+        ]
+      },
+      'poi-participant': {
+        id: 'poi-participant',
+        name: 'Participant places',
+        color: '#0ea5e9',
+        isBuiltin: true,
+        notes: 'Participant homes and meeting points.',
+        items: [
+          { lat: -34.9412, lng: 138.6122, label: 'Participant A', type: 'participant' },
+          { lat: -34.9364, lng: 138.5858, label: 'Participant B', type: 'participant' }
+        
+        ]
+      }
+    };
 
-    // Track the last tapped location
-    let lastTapLatLng = null;
+    const poiLayers = {};
+
+    function formatPoiType(type) {
+      if (!type || type === 'general') return '';
+      return type.replace(/-/g, ' ');
+    }
+
+    function createPoiMarker(entry, item) {
+      const label = item.label || entry.name;
+      const typeLabel = formatPoiType(item.type);
+      return L.circleMarker([item.lat, item.lng], {
+        radius: 6,
+        color: entry.color,
+        fillColor: entry.color,
+        fillOpacity: 0.95,
+        weight: 1.5
+      }).bindPopup(
+        `<b>${label}</b><br>` +
+        (typeLabel
+          ? `<span style="font-size:12px;color:#6b7280;">Type: ${typeLabel}</span><br>`
+          : '') +
+        `<span style="font-size:12px;color:#6b7280;">Layer: ${entry.name}</span>`
+      );
+    }
+
+    function addPoiItem(entry, lat, lng, label, type) {
+      const item = { lat, lng, label: label || entry.name, type: type || 'general' };
+      entry.items.push(item);
+      const marker = createPoiMarker(entry, item);
+      entry.layer.addLayer(marker);
+    }
+
+    function refreshPlacesLayerSelect(selectedId) {
+      if (!placesLayerSelect) return;
+      placesLayerSelect.innerHTML = '';
+
+      const entries = Object.values(poiLayers).sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+
+      entries.forEach((entry) => {
+        const opt = document.createElement('option');
+        opt.value = entry.id;
+        opt.textContent = entry.name;
+        placesLayerSelect.appendChild(opt);
+      });
+
+      const fallbackId = entries.length ? entries[0].id : '';
+      const nextId = (selectedId && poiLayers[selectedId])
+        ? selectedId
+        : fallbackId;
+
+      if (nextId) {
+        placesLayerSelect.value = nextId;
+        activePoiLayerId = nextId;
+      }
+      refreshShareLayerSelect(activePoiLayerId);
+    }
+
+    function initPoiLayers() {
+      Object.values(POI_DEFAULTS).forEach((def) => {
+        const entry = {
+          id: def.id,
+          name: def.name,
+          color: def.color,
+          isBuiltin: !!def.isBuiltin,
+          notes: def.notes || '',
+          items: Array.isArray(def.items) ? def.items.slice() : [],
+          layer: L.layerGroup().addTo(map)
+        };
+
+        entry.items.forEach((item) => {
+          const marker = createPoiMarker(entry, item);
+          entry.layer.addLayer(marker);
+        });
+
+        poiLayers[entry.id] = entry;
+      });
+
+      refreshPlacesLayerSelect();
+    }
+
+    // Hook up the Places & layers UI
+    const placesLayerSelect = document.getElementById('places-layer-select');
+    const placesAddFromTapBtn = document.getElementById('places-add-from-tap-btn');
+    const placesAddFromSearchBtn = document.getElementById('places-add-from-search-btn');
+    const placesClearLayerBtn = document.getElementById('places-clear-layer-btn');
+    const placesNewLayerBtn = document.getElementById('places-new-layer-btn');
+    const placesEditLayerBtn = document.getElementById('places-edit-layer-btn');
+    const placesDeleteLayerBtn = document.getElementById('places-delete-layer-btn');
+
+    const poiLayerModalBackdrop = document.getElementById('poi-layer-modal-backdrop');
+    const poiLayerModalTitle = document.getElementById('poi-layer-modal-title-text');
+    const poiLayerModalCloseBtn = document.getElementById('poi-layer-modal-close-btn');
+    const poiLayerModalCancelBtn = document.getElementById('poi-layer-modal-cancel-btn');
+    const poiLayerModalSaveBtn = document.getElementById('poi-layer-modal-save-btn');
+    const poiLayerNameInput = document.getElementById('poi-layer-name-input');
+    const poiLayerNotesInput = document.getElementById('poi-layer-notes-input');
+    const poiLayerColorSwatches = document.getElementById('poi-layer-color-swatches');
+    const poiPlaceNameInput = document.getElementById('poi-place-name-input');
+    const poiPlaceTypeSelect = document.getElementById('poi-place-type-select');
+    const poiAddressSearchInput = document.getElementById('poi-address-search-input');
+    const poiAddressSearchBtn = document.getElementById('poi-address-search-btn');
+    const poiSearchResults = document.getElementById('poi-search-results');
+    const poiAddPlaceBtn = document.getElementById('poi-add-place-btn');
+    const poiShareLayerCheckbox = document.getElementById('poi-share-layer-checkbox');
+    const poiShareLayerSelect = document.getElementById('poi-share-layer-select');
+
+    let activePoiLayerId = null;
+    let poiLayerModalMode = 'edit';
+    let poiLayerModalEntryId = null;
+    let selectedPoiColor = '#0ea5e9';
+    let selectedPoiSearch = null;
+
+    const POI_COLOR_SWATCHES = [
+      '#16a34a',
+      '#22c55e',
+      '#0ea5e9',
+      '#2563eb',
+      '#a855f7',
+      '#f97316',
+      '#f59e0b',
+      '#ef4444',
+      '#14b8a6',
+      '#e11d48'
+    ];
+
+    function getActivePoiLayerEntry() {
+      return activePoiLayerId ? poiLayers[activePoiLayerId] : null;
+    }
+
+    function closePoiLayerModal() {
+      poiLayerModalBackdrop.style.display = 'none';
+      selectedPoiSearch = null;
+      poiSearchResults.innerHTML = '';
+      poiShareLayerCheckbox.checked = false;
+      poiShareLayerSelect.disabled = true;
+    }
+
+    function openPoiLayerModal(mode, entry) {
+      poiLayerModalMode = mode;
+      poiLayerModalEntryId = entry ? entry.id : null;
+      poiLayerModalTitle.textContent = mode === 'create' ? 'Create POI layer' : 'Edit POI layer';
+      poiLayerNameInput.value = entry ? entry.name : '';
+      poiLayerNotesInput.value = entry ? entry.notes || '' : '';
+      selectedPoiColor = entry ? entry.color : '#0ea5e9';
+
+      poiPlaceNameInput.value = '';
+      poiPlaceTypeSelect.value = 'general';
+      poiAddressSearchInput.value = '';
+      poiSearchResults.innerHTML = '';
+      selectedPoiSearch = null;
+
+      renderColorSwatches();
+      refreshShareLayerSelect(entry ? entry.id : null);
+
+      poiLayerModalBackdrop.style.display = 'flex';
+    }
+
+    function renderColorSwatches() {
+      if (!poiLayerColorSwatches) return;
+      poiLayerColorSwatches.innerHTML = '';
+      POI_COLOR_SWATCHES.forEach((color) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'swatch-btn' + (color === selectedPoiColor ? ' selected' : '');
+        btn.style.background = color;
+        btn.dataset.color = color;
+        btn.addEventListener('click', () => {
+          selectedPoiColor = color;
+          renderColorSwatches();
+        });
+        poiLayerColorSwatches.appendChild(btn);
+      });
+    }
+
+    function refreshShareLayerSelect(currentId) {
+      if (!poiShareLayerSelect) return;
+      poiShareLayerSelect.innerHTML = '';
+      Object.values(poiLayers).forEach((entry) => {
+        if (entry.id === currentId) return;
+        const opt = document.createElement('option');
+        opt.value = entry.id;
+        opt.textContent = entry.name;
+        poiShareLayerSelect.appendChild(opt);
+      });
+      const hasOptions = poiShareLayerSelect.options.length > 0;
+      poiShareLayerSelect.disabled = !poiShareLayerCheckbox.checked || !hasOptions;
+    }
+
+    if (placesLayerSelect) {
+      placesLayerSelect.addEventListener('change', () => {
+        activePoiLayerId = placesLayerSelect.value;
+      });
+    }
+
+    if (poiShareLayerCheckbox) {
+      poiShareLayerCheckbox.addEventListener('change', () => {
+        poiShareLayerSelect.disabled = !poiShareLayerCheckbox.checked;
+      });
+    }
+
+    if (poiLayerModalCloseBtn) {
+      poiLayerModalCloseBtn.addEventListener('click', closePoiLayerModal);
+    }
+
+    if (poiLayerModalCancelBtn) {
+      poiLayerModalCancelBtn.addEventListener('click', closePoiLayerModal);
+    }
+
+    if (poiLayerModalSaveBtn) {
+      poiLayerModalSaveBtn.addEventListener('click', () => {
+        const name = poiLayerNameInput.value.trim();
+        if (!name) {
+          infoText.textContent = 'Please provide a layer name.';
+          return;
+        }
+
+        if (poiLayerModalMode === 'create') {
+          const baseSlug = name
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '') || 'custom';
+
+          let id = `poi-${baseSlug}`;
+          let counter = 1;
+          while (poiLayers[id]) {
+            id = `poi-${baseSlug}-${counter++}`;
+          }
+
+          poiLayers[id] = {
+            id,
+            name,
+            color: selectedPoiColor,
+            notes: poiLayerNotesInput.value.trim(),
+            isBuiltin: false,
+            items: [],
+            layer: L.layerGroup().addTo(map)
+          };
+
+          refreshPlacesLayerSelect(id);
+          infoText.textContent = `New layer created: "${name}".`;
+        } else {
+          const entry = poiLayers[poiLayerModalEntryId];
+          if (!entry) return;
+          entry.name = name;
+          entry.color = selectedPoiColor;
+          entry.notes = poiLayerNotesInput.value.trim();
+
+          entry.layer.clearLayers();
+          entry.items.forEach((item) => {
+            const marker = createPoiMarker(entry, item);
+            entry.layer.addLayer(marker);
+          });
+
+          refreshPlacesLayerSelect(entry.id);
+          infoText.textContent = `Layer updated: "${entry.name}".`;
+        }
+
+        closePoiLayerModal();
+      });
+    }
+
+    if (placesAddFromTapBtn) {
+      placesAddFromTapBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+        if (!lastTapLatLng) {
+          infoText.textContent = 'Tap the map first, then add from last tap.';
+          return;
+        }
+        const [lat, lng] = lastTapLatLng;
+        addPoiItem(entry, lat, lng, lastTapLabel || 'Custom place (map tap)', 'general');
+        infoText.textContent = 'Point added to layer from last tap.';
+      });
+    }
+
+    if (placesAddFromSearchBtn) {
+      placesAddFromSearchBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+        if (!lastSearchLatLng) {
+          infoText.textContent =
+            'Search for a place first, then add from search.';
+          return;
+        }
+        const [lat, lng] = lastSearchLatLng;
+        const label = lastSearchLabel || 'Search result';
+        addPoiItem(entry, lat, lng, label, 'general');
+        infoText.textContent = 'Search result added to layer.';
+      });
+    }
+
+    if (placesClearLayerBtn) {
+      placesClearLayerBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+        entry.layer.clearLayers();
+        entry.items = [];
+        infoText.textContent = 'All points cleared from this layer.';
+      });
+    }
+
+    if (placesEditLayerBtn) {
+      placesEditLayerBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) return;
+        openPoiLayerModal('edit', entry);
+      });
+    }
+
+    if (placesDeleteLayerBtn) {
+      placesDeleteLayerBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) return;
+        if (entry.isBuiltin) {
+          alert('Built-in layers cannot be deleted. Use Clear instead.');
+          return;
+        }
+
+        const ok = confirm(`Delete layer "${entry.name}" and all its places?`);
+        if (!ok) return;
+
+        entry.layer.clearLayers();
+        map.removeLayer(entry.layer);
+        delete poiLayers[entry.id];
+        refreshPlacesLayerSelect();
+        infoText.textContent = 'Layer deleted.';
+      });
+    }
+
+    if (placesNewLayerBtn) {
+      placesNewLayerBtn.addEventListener('click', () => {
+        openPoiLayerModal('create', null);
+      });
+    }
+
+    if (poiAddressSearchBtn) {
+      poiAddressSearchBtn.addEventListener('click', async () => {
+        const query = poiAddressSearchInput.value.trim();
+        if (!query) {
+          infoText.textContent = 'Enter an address or place to search.';
+          return;
+        }
+
+        poiSearchResults.innerHTML = 'Searching...';
+        selectedPoiSearch = null;
+
+        try {
+          const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            query
+          )}&addressdetails=1&limit=5`;
+
+          const response = await fetch(url, {
+            headers: {
+              'Accept-Language': 'en'
+            }
+          });
+
+          if (!response.ok) {
+            throw new Error('Search failed');
+          }
+
+          const results = await response.json();
+          poiSearchResults.innerHTML = '';
+
+          if (!results || !results.length) {
+            poiSearchResults.textContent = 'No results found.';
+            return;
+          }
+
+          results.forEach((place, idx) => {
+            const item = document.createElement('div');
+            item.className = 'poi-search-item';
+            item.textContent = place.display_name;
+            item.addEventListener('click', () => {
+              selectedPoiSearch = {
+                lat: parseFloat(place.lat),
+                lng: parseFloat(place.lon),
+                label: place.display_name
+              };
+              poiSearchResults.querySelectorAll('.poi-search-item').forEach((el) => {
+                el.classList.remove('selected');
+              });
+              item.classList.add('selected');
+            });
+            if (idx === 0) {
+              item.classList.add('selected');
+              selectedPoiSearch = {
+                lat: parseFloat(place.lat),
+                lng: parseFloat(place.lon),
+                label: place.display_name
+              };
+            }
+            poiSearchResults.appendChild(item);
+          });
+        } catch (e) {
+          console.error(e);
+          poiSearchResults.textContent = 'Search failed. Try again.';
+        }
+      });
+    }
+
+    if (poiAddPlaceBtn) {
+      poiAddPlaceBtn.addEventListener('click', () => {
+        const entry = getActivePoiLayerEntry();
+        if (!entry) {
+          infoText.textContent = 'Choose an active layer first.';
+          return;
+        }
+
+        if (!selectedPoiSearch) {
+          infoText.textContent = 'Select a search result first.';
+          return;
+        }
+
+        const label = poiPlaceNameInput.value.trim() || selectedPoiSearch.label;
+        const type = poiPlaceTypeSelect.value;
+        addPoiItem(entry, selectedPoiSearch.lat, selectedPoiSearch.lng, label, type);
+
+        if (poiShareLayerCheckbox.checked) {
+          const otherId = poiShareLayerSelect.value;
+          const otherEntry = poiLayers[otherId];
+          if (otherEntry) {
+            addPoiItem(otherEntry, selectedPoiSearch.lat, selectedPoiSearch.lng, label, type);
+          }
+        }
+
+        infoText.textContent = `Added "${label}" to ${entry.name}.`;
+        poiPlaceNameInput.value = '';
+        poiPlaceTypeSelect.value = 'general';
+      });
+    }
+
+    initPoiLayers();
 
     // ------------ Locate Me – hook both main button + small button ------------
     const locateBtn = document.getElementById('locate-btn');
@@ -1229,6 +1991,11 @@
           const lat = position.coords.latitude;
           const lng = position.coords.longitude;
 
+
+          // Expose last known user location for modules (e.g., Find a Seat)
+          window.__osmrpUserLatLng = { lat, lng };
+          window.dispatchEvent(new CustomEvent('osmrp:located', { detail: { lat, lng } }));
+          document.dispatchEvent(new CustomEvent('osmrp:located', { detail: { lat, lng } }));
           infoText.textContent =
             `Your position: latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}`;
 
@@ -1269,13 +2036,10 @@
     locateBtn.addEventListener('click', performLocate);
     locateFab.addEventListener('click', performLocate);
 
-
     // ------------ Search using Nominatim ------------
     const searchInput = document.getElementById('search-input');
     const searchBtn = document.getElementById('search-btn');
-    const addSearchWaypointBtn = document.getElementById(
-      'add-search-waypoint-btn'
-    );
+    const addSearchWaypointBtn = document.getElementById('add-search-waypoint-btn');
     const saveFavouriteBtn = document.getElementById('save-favourite-btn');
 
     let searchMarker = null;
@@ -1356,47 +2120,1093 @@
     });
 
     // ------------ Route building with OSRM ------------
-    const routeModeCheckbox = document.getElementById('route-mode-checkbox');
-    const clearRouteBtn = document.getElementById('clear-route-btn');
+ // ------------ Route building with OSRM ------------
+const routeModeCheckbox = document.getElementById('route-mode-checkbox');
+const clearRouteBtn = document.getElementById('clear-route-btn');
 
-    let routeMode = false;
-    const ROUTE_KEY = 'osmRouteLastRoute';
-    const ROUTE_SUMMARY_KEY = 'osmRouteLastRouteSummary';
+let routeMode = false;
 
-    function saveRouteToStorage() {
+// Keys for persisting the last route in localStorage
+const ROUTE_KEY = 'osmRouteLastRoute';
+const ROUTE_SUMMARY_KEY = 'osmRouteLastRouteSummary';
+
+// Route state
+let routePoints = [];        // [ [lat, lng], ... ]
+let routeMarkers = [];       // Leaflet circleMarkers for each waypoint
+let roadRoutePolyline = null;
+let lastRouteSummary = null; // { distanceKm, durationMin, stopsCount }
+
+// Save route + summary for next launch
+function saveRouteToStorage() {
+  try {
+    localStorage.setItem(ROUTE_KEY, JSON.stringify(routePoints));
+    if (lastRouteSummary) {
+      localStorage.setItem(
+        ROUTE_SUMMARY_KEY,
+        JSON.stringify(lastRouteSummary)
+      );
+    } else {
+      localStorage.removeItem(ROUTE_SUMMARY_KEY);
+    }
+  } catch (e) {
+    console.error('Error saving route', e);
+  }
+}
+
+routeModeCheckbox.addEventListener('change', (e) => {
+  routeMode = e.target.checked;
+  if (routeMode) {
+    infoText.textContent =
+      'Route mode ON: tap the map to add waypoints in order.';
+  } else {
+    infoText.textContent =
+      'Route mode OFF: taps just move a single marker instead.';
+  }
+});
+
+// Clear route in memory, on map, and in storage
+function clearRouteOnly() {
+  routePoints = [];
+
+  if (roadRoutePolyline) {
+    map.removeLayer(roadRoutePolyline);
+    roadRoutePolyline = null;
+  }
+
+  routeMarkers.forEach((m) => map.removeLayer(m));
+  routeMarkers = [];
+
+  lastRouteSummary = null;
+  navHud.textContent = 'No route active.';
+
+  try {
+    localStorage.removeItem(ROUTE_KEY);
+    localStorage.removeItem(ROUTE_SUMMARY_KEY);
+  } catch (e) {
+    console.error('Error clearing route from storage', e);
+  }
+}
+
+clearRouteBtn.addEventListener('click', () => {
+  clearRouteOnly();
+  infoText.textContent = 'Route cleared.';
+});
+
+// Fetch OSRM road route whenever routePoints changes
+async function updateRoadRoute() {
+  if (routePoints.length < 2) {
+    if (roadRoutePolyline) {
+      map.removeLayer(roadRoutePolyline);
+      roadRoutePolyline = null;
+    }
+    lastRouteSummary = null;
+    navHud.textContent = 'Need at least 2 stops for a route.';
+    return;
+  }
+
+  try {
+    // OSRM expects lon,lat;lon,lat;...
+    const coordString = routePoints
+      .map(([lat, lng]) => `${lng},${lat}`)
+      .join(';');
+
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('OSRM request failed');
+    }
+
+    const data = await response.json();
+    if (data.code !== 'Ok' || !data.routes || !data.routes.length) {
+      infoText.textContent = 'No road route found between these points.';
+      return;
+    }
+
+    const route = data.routes[0];
+    const distanceKm = route.distance / 1000;
+    const durationMin = route.duration / 60;
+
+    // Convert OSRM [lon, lat] to Leaflet [lat, lon]
+    const coords = route.geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+
+    if (!roadRoutePolyline) {
+      roadRoutePolyline = L.polyline(coords, { weight: 5 }).addTo(map);
+    } else {
+      roadRoutePolyline.setLatLngs(coords);
+    }
+
+    const stopsCount = routePoints.length;
+    lastRouteSummary = {
+      distanceKm,
+      durationMin,
+      stopsCount
+    };
+
+    // Persist for next session
+    saveRouteToStorage();
+
+    const stopsLabel = stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
+
+    infoText.textContent =
+      `Route: ${stopsLabel}, ` +
+      `${distanceKm.toFixed(2)} km, ~${durationMin.toFixed(1)} min.`;
+
+    navHud.textContent =
+      `Trip ready • ${stopsLabel} • ` +
+      `${distanceKm.toFixed(1)} km • ~${durationMin.toFixed(0)} min`;
+  } catch (err) {
+    console.error(err);
+    infoText.textContent = 'Error fetching road route. Try again later.';
+    navHud.textContent = 'Error: route service unavailable.';
+  }
+}
+
+// Helper: add a waypoint and refresh the route
+function addWaypoint(lat, lng, sourceLabel) {
+  routePoints.push([lat, lng]);
+
+  const waypointMarker = L.circleMarker([lat, lng], {
+    radius: 5
+  }).addTo(map);
+  routeMarkers.push(waypointMarker);
+
+  const label = sourceLabel ? ` (${sourceLabel})` : '';
+
+  updateRoadRoute().catch((err) => console.error(err));
+
+  infoText.textContent =
+    `Route points: ${routePoints.length}${label}. Last point at ` +
+    `lat ${lat.toFixed(5)}, lon ${lng.toFixed(5)}.`;
+}
+
+// Map click: either add waypoint (route mode) or move single marker
+map.on('click', (e) => {
+  const lat = e.latlng.lat;
+  const lng = e.latlng.lng;
+  lastTapLatLng = [lat, lng];
+  lastTapLabel = null;
+
+  if (routeMode) {
+    addWaypoint(lat, lng, 'map tap');
+  } else {
+    infoText.textContent =
+      `Last tap: latitude ${lat.toFixed(5)}, longitude ${lng.toFixed(5)}`;
+
+    if (!clickMarker) {
+      clickMarker = L.marker(e.latlng).addTo(map);
+    } else {
+      clickMarker.setLatLng(e.latlng);
+    }
+
+    clickMarker
+      .bindPopup(
+        `<b>Tapped location</b><br>Lat: ${lat.toFixed(
+          5
+        )}<br>Lng: ${lng.toFixed(5)}`
+      )
+      .openPopup();
+  }
+});
+
+// Add last search result as a waypoint
+addSearchWaypointBtn.addEventListener('click', () => {
+  if (!lastSearchLatLng) {
+    infoText.textContent =
+      'There is no recent search result to add as a waypoint.';
+    return;
+  }
+
+  const [lat, lng] = lastSearchLatLng;
+  addWaypoint(lat, lng, 'search result');
+});
+
+
+    // ------------ Folders + favourites in localStorage ------------
+    const favFolderSelect = document.getElementById('fav-folder-select');
+    const favTargetFolderSelect = document.getElementById(
+      'fav-target-folder-select'
+    );
+    const favNewFolderBtn = document.getElementById('fav-new-folder-btn');
+    const favouritesSelect = document.getElementById('favourites-select');
+    const favGoBtn = document.getElementById('fav-go-btn');
+    const favAddWaypointBtn = document.getElementById('fav-add-waypoint-btn');
+    const favCopyToFolderBtn = document.getElementById('fav-copy-to-folder-btn');
+
+    let favouriteFolders = [];
+    let currentFolderIndex = 0;
+
+    function defaultFolders() {
+      favouriteFolders = [
+        {
+          name: 'Default',
+          items: []
+        }
+      ];
+      currentFolderIndex = 0;
+    }
+
+    function loadFavourites() {
       try {
-        localStorage.setItem(ROUTE_KEY, JSON.stringify(routePoints));
-        if (lastRouteSummary) {
-          localStorage.setItem(ROUTE_SUMMARY_KEY, JSON.stringify(lastRouteSummary));
+        const raw = localStorage.getItem('osmRouteFavourites');
+        if (!raw) {
+          defaultFolders();
+          refreshFolderSelect();
+          refreshTargetFolderSelect();
+          refreshFavouritesSelect();
+          return;
+        }
+
+        const parsed = JSON.parse(raw);
+
+        if (Array.isArray(parsed)) {
+          if (
+            parsed.length > 0 &&
+            parsed[0] &&
+            typeof parsed[0] === 'object' &&
+            'items' in parsed[0]
+          ) {
+            favouriteFolders = parsed;
+          } else {
+            favouriteFolders = [
+              {
+                name: 'Default',
+                items: parsed
+              }
+            ];
+          }
         } else {
-          localStorage.removeItem(ROUTE_SUMMARY_KEY);
+          defaultFolders();
         }
       } catch (e) {
-        console.error('Error saving route', e);
+        console.error('Error loading favourites:', e);
+        defaultFolders();
+      }
+
+      currentFolderIndex = 0;
+      refreshFolderSelect();
+      refreshTargetFolderSelect();
+      refreshFavouritesSelect();
+    }
+
+    function saveFavourites() {
+      try {
+        localStorage.setItem(
+          'osmRouteFavourites',
+          JSON.stringify(favouriteFolders)
+        );
+      } catch (e) {
+        console.error('Error saving favourites:', e);
       }
     }
 
-    let routePoints = [];
-    let routeMarkers = [];
-    let roadRoutePolyline = null;
+    function truncateLabel(label, max = 60) {
+      return label.length > max ? label.slice(0, max - 3) + '...' : label;
+    }
 
-    let lastRouteSummary = null;
+    function getCurrentFolder() {
+      if (
+        currentFolderIndex < 0 ||
+        currentFolderIndex >= favouriteFolders.length
+      ) {
+        currentFolderIndex = 0;
+      }
+      return favouriteFolders[currentFolderIndex];
+    }
 
-    routeModeCheckbox.addEventListener('change', (e) => {
-      routeMode = e.target.checked;
-      if (routeMode) {
-        infoText.textContent =
-          'Route mode ON: tap the map to add waypoints in order.';
+    function refreshFolderSelect() {
+      favFolderSelect.innerHTML = '';
+      favouriteFolders.forEach((folder, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = folder.name;
+        favFolderSelect.appendChild(opt);
+      });
+      favFolderSelect.value = String(currentFolderIndex);
+    }
+
+    function refreshTargetFolderSelect() {
+      favTargetFolderSelect.innerHTML = '';
+      favouriteFolders.forEach((folder, idx) => {
+        const opt = document.createElement('option');
+        opt.value = String(idx);
+        opt.textContent = folder.name;
+        favTargetFolderSelect.appendChild(opt);
+      });
+      favTargetFolderSelect.value = String(currentFolderIndex);
+    }
+
+    function refreshFavouritesSelect() {
+      favouritesSelect.innerHTML = '';
+      const folder = getCurrentFolder();
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = folder.items.length
+        ? '(select a favourite)'
+        : '(no favourites in this folder)';
+      favouritesSelect.appendChild(placeholder);
+
+      folder.items.forEach((fav, index) => {
+        const opt = document.createElement('option');
+        opt.value = String(index);
+        opt.textContent = truncateLabel(fav.name);
+        favouritesSelect.appendChild(opt);
+      });
+    }
+
+    favNewFolderBtn.addEventListener('click', () => {
+      const name = (prompt('New folder name:') || '').trim();
+      if (!name) return;
+
+      const exists = favouriteFolders.some(
+        (folder) => folder.name.toLowerCase() === name.toLowerCase()
+      );
+      if (exists) {
+        infoText.textContent = 'A folder with that name already exists.';
+        return;
+      }
+
+      favouriteFolders.push({ name, items: [] });
+      currentFolderIndex = favouriteFolders.length - 1;
+      saveFavourites();
+      refreshFolderSelect();
+      refreshTargetFolderSelect();
+      refreshFavouritesSelect();
+
+      infoText.textContent = `Folder "${name}" created.`;
+    });
+
+    favFolderSelect.addEventListener('change', (e) => {
+      const idx = Number(e.target.value);
+      if (!Number.isNaN(idx)) {
+        currentFolderIndex = idx;
       } else {
+        currentFolderIndex = 0;
+      }
+      refreshFavouritesSelect();
+      refreshTargetFolderSelect();
+    });
+
+    saveFavouriteBtn.addEventListener('click', () => {
+      if (!lastSearchLatLng || !lastSearchLabel) {
         infoText.textContent =
-          'Route mode OFF: taps move a single marker instead.';
+          'Search for a location first, then you can save it as a favourite.';
+        return;
+      }
+
+      const folder = getCurrentFolder();
+      const [lat, lng] = lastSearchLatLng;
+      const name = lastSearchLabel;
+
+      const exists = folder.items.some(
+        (fav) => fav.lat === lat && fav.lng === lng
+      );
+      if (exists) {
+        infoText.textContent =
+          'This location is already in your favourites for this folder.';
+        return;
+      }
+
+      folder.items.push({ name, lat, lng });
+      saveFavourites();
+      refreshFavouritesSelect();
+
+      infoText.textContent = `Favourite saved in folder "${folder.name}".`;
+    });
+
+    favGoBtn.addEventListener('click', () => {
+      const folder = getCurrentFolder();
+      const idx = favouritesSelect.value;
+      if (idx === '') {
+        infoText.textContent = 'Please select a favourite first.';
+        return;
+      }
+
+      const fav = folder.items[Number(idx)];
+      const { lat, lng, name } = fav;
+
+      map.setView([lat, lng], 16);
+
+      lastSearchLatLng = [lat, lng];
+      lastSearchLabel = name;
+
+      if (!searchMarker) {
+        searchMarker = L.marker([lat, lng]).addTo(map);
+      } else {
+        searchMarker.setLatLng([lat, lng]);
+      }
+
+      searchMarker
+        .bindPopup(
+          `<b>Favourite</b><br>${name}<br>Lat: ${lat.toFixed(
+            5
+          )}, Lon: ${lng.toFixed(5)}`
+        )
+        .openPopup();
+
+      infoText.textContent = `Moved to favourite: ${name}`;
+    });
+
+    favAddWaypointBtn.addEventListener('click', () => {
+      const folder = getCurrentFolder();
+      const idx = favouritesSelect.value;
+      if (idx === '') {
+        infoText.textContent = 'Please select a favourite first.';
+        return;
+      }
+
+      const fav = folder.items[Number(idx)];
+      addWaypoint(fav.lat, fav.lng, `favourite in "${folder.name}"`);
+    });
+
+    favCopyToFolderBtn.addEventListener('click', () => {
+      const sourceFolder = getCurrentFolder();
+      const favIdx = favouritesSelect.value;
+      if (favIdx === '') {
+        infoText.textContent =
+          'Please select a favourite to add to another folder.';
+        return;
+      }
+
+      const targetIdx = Number(favTargetFolderSelect.value);
+      if (
+        Number.isNaN(targetIdx) ||
+        targetIdx < 0 ||
+        targetIdx >= favouriteFolders.length
+      ) {
+        infoText.textContent = 'Please select a valid destination folder.';
+        return;
+      }
+
+      const targetFolder = favouriteFolders[targetIdx];
+      const fav = sourceFolder.items[Number(favIdx)];
+      if (!fav) {
+        infoText.textContent = 'Could not find the selected favourite.';
+        return;
+      }
+
+      const exists = targetFolder.items.some(
+        (item) => item.lat === fav.lat && item.lng === fav.lng
+      );
+      if (exists) {
+        infoText.textContent =
+          `That favourite already exists in folder "${targetFolder.name}".`;
+        return;
+      }
+
+      targetFolder.items.push({ name: fav.name, lat: fav.lat, lng: fav.lng });
+      saveFavourites();
+
+      if (targetIdx === currentFolderIndex) {
+        refreshFavouritesSelect();
+      }
+
+      infoText.textContent =
+        `Favourite added to folder "${targetFolder.name}".`;
+    });
+
+    loadFavourites();
+
+    // ------------ Trip planner modal ------------
+    const tripModalBackdrop = document.getElementById('trip-modal-backdrop');
+    const tripModalList = document.getElementById('trip-modal-list');
+    const tripOpenBtn = document.getElementById('trip-open-btn');
+    const tripCloseBtn = document.getElementById('trip-close-btn');
+    const tripCancelBtn = document.getElementById('trip-cancel-btn');
+    const tripApplyBtn = document.getElementById('trip-apply-btn');
+
+    function openTripModal() {
+      const folder = getCurrentFolder();
+      if (!folder.items.length) {
+        infoText.textContent =
+          'No favourites in this folder to build a trip from.';
+        return;
+      }
+
+      tripModalList.innerHTML = '';
+      folder.items.forEach((fav, index) => {
+        const row = document.createElement('div');
+        row.className = 'trip-item-row';
+        row.dataset.index = String(index);
+
+        const checkboxCell = document.createElement('div');
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = true;
+        checkbox.dataset.index = String(index);
+        checkboxCell.appendChild(checkbox);
+
+        const nameCell = document.createElement('div');
+        nameCell.className = 'trip-item-name';
+        nameCell.textContent = truncateLabel(fav.name, 80);
+
+        const orderCell = document.createElement('div');
+        orderCell.className = 'trip-item-order';
+        const upBtn = document.createElement('button');
+        upBtn.textContent = '▲';
+        upBtn.dataset.dir = 'up';
+        upBtn.dataset.index = String(index);
+        const downBtn = document.createElement('button');
+        downBtn.textContent = '▼';
+        downBtn.dataset.dir = 'down';
+        downBtn.dataset.index = String(index);
+        orderCell.appendChild(upBtn);
+        orderCell.appendChild(downBtn);
+
+        row.appendChild(checkboxCell);
+        row.appendChild(nameCell);
+        row.appendChild(orderCell);
+        tripModalList.appendChild(row);
+      });
+
+      tripModalBackdrop.style.display = 'flex';
+    }
+
+    function closeTripModal() {
+      tripModalBackdrop.style.display = 'none';
+    }
+
+    tripOpenBtn.addEventListener('click', openTripModal);
+    tripCloseBtn.addEventListener('click', closeTripModal);
+    tripCancelBtn.addEventListener('click', closeTripModal);
+
+    tripModalList.addEventListener('click', (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      const dir = target.dataset.dir;
+      if (!dir) return;
+
+      const index = Number(target.dataset.index);
+      if (Number.isNaN(index)) return;
+
+      const rows = Array.from(
+        tripModalList.querySelectorAll('.trip-item-row')
+      );
+      const rowIndex = rows.findIndex(
+        (r) => Number(r.dataset.index) === index
+      );
+      if (rowIndex === -1) return;
+
+      if (dir === 'up' && rowIndex > 0) {
+        tripModalList.insertBefore(rows[rowIndex], rows[rowIndex - 1]);
+      } else if (dir === 'down' && rowIndex < rows.length - 1) {
+        tripModalList.insertBefore(rows[rowIndex + 1], rows[rowIndex]);
       }
     });
 
-    function clearRouteOnly() {
+    tripApplyBtn.addEventListener('click', () => {
+      const folder = getCurrentFolder();
+      const rows = Array.from(
+        tripModalList.querySelectorAll('.trip-item-row')
+      );
+
+      const selected = [];
+      for (const row of rows) {
+        const idx = Number(row.dataset.index);
+        const checkbox = row.querySelector('input[type="checkbox"]');
+        if (!checkbox || !checkbox.checked) continue;
+        const fav = folder.items[idx];
+        if (fav) selected.push(fav);
+      }
+
+      if (selected.length < 2) {
+        infoText.textContent =
+          'Select at least two stops to build a trip.';
+        return;
+      }
+
+      clearRouteOnly();
+
+      selected.forEach((fav) => {
+        addWaypoint(fav.lat, fav.lng, `trip from "${folder.name}"`);
+      });
+
+      infoText.textContent =
+        `Trip created with ${selected.length} stops from "${folder.name}".`;
+      closeTripModal();
+    });
+
+    // ------------ Import KML / KMZ / GPX / GeoJSON ------------
+    const fileInput = document.getElementById('file-input');
+    const clearImportsBtn = document.getElementById('clear-imports-btn');
+    let importedLayers = [];
+
+    fileInput.addEventListener('change', async (event) => {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+
+      let overallBounds = null;
+
+      for (const file of files) {
+        const name = file.name;
+        const lower = name.toLowerCase();
+        try {
+          let geojson = null;
+
+          if (lower.endsWith('.geojson') || lower.endsWith('.json')) {
+            const text = await file.text();
+            geojson = JSON.parse(text);
+          } else if (lower.endsWith('.kml')) {
+            const text = await file.text();
+            const dom = new DOMParser().parseFromString(text, 'text/xml');
+            geojson = toGeoJSON.kml(dom);
+          } else if (lower.endsWith('.gpx')) {
+            const text = await file.text();
+            const dom = new DOMParser().parseFromString(text, 'text/xml');
+            geojson = toGeoJSON.gpx(dom);
+          } else if (lower.endsWith('.kmz')) {
+            const arrayBuf = await file.arrayBuffer();
+            const zip = await JSZip.loadAsync(arrayBuf);
+            let kmlFile = null;
+
+            zip.forEach((relativePath, zipEntry) => {
+              if (!kmlFile && relativePath.toLowerCase().endsWith('.kml')) {
+                kmlFile = zipEntry;
+              }
+            });
+
+            if (!kmlFile) {
+              infoText.textContent =
+                `KMZ "${name}" does not contain a KML file that we can read.`;
+              continue;
+            }
+
+            const kmlText = await kmlFile.async('text');
+            const dom = new DOMParser().parseFromString(kmlText, 'text/xml');
+            geojson = toGeoJSON.kml(dom);
+          } else {
+            infoText.textContent =
+              `Unsupported file type for "${name}". Use KML, KMZ, GPX, or GeoJSON.`;
+            continue;
+          }
+
+          if (!geojson) {
+            infoText.textContent = `Could not parse "${name}".`;
+            continue;
+          }
+
+          const layer = L.geoJSON(geojson, {
+            onEachFeature: (feature, layer) => {
+              const props = feature.properties || {};
+              const name =
+                props.name ||
+                props.Name ||
+                props.title ||
+                props.description ||
+                'Imported feature';
+              layer.bindPopup(`<b>${name}</b>`);
+            }
+          }).addTo(map);
+
+          importedLayers.push(layer);
+
+          try {
+            const layerBounds = layer.getBounds();
+            if (layerBounds && layerBounds.isValid && layerBounds.isValid()) {
+              if (overallBounds) {
+                overallBounds.extend(layerBounds);
+              } else {
+                overallBounds = layerBounds;
+              }
+            }
+          } catch (e) {
+            console.warn('Could not compute bounds for layer:', e);
+          }
+        } catch (err) {
+          console.error(err);
+          infoText.textContent = `Error importing "${name}". See console for details.`;
+        }
+      }
+
+      if (overallBounds && overallBounds.isValid && overallBounds.isValid()) {
+        map.fitBounds(overallBounds);
+      }
+
+      if (files.length === 1) {
+        infoText.textContent = `Imported ${files[0].name}`;
+      } else {
+        infoText.textContent = `Imported ${files.length} files.`;
+      }
+
+      fileInput.value = '';
+    });
+
+    clearImportsBtn.addEventListener('click', () => {
+      importedLayers.forEach((layer) => map.removeLayer(layer));
+      importedLayers = [];
+      infoText.textContent = 'Imported layers cleared.';
+    });
+
+    // ------------ Live navigation (watchPosition) ------------
+    const btnStartNav = document.getElementById('btn-start-nav');
+    const btnStopNav = document.getElementById('btn-stop-nav');
+    let watchId = null;
+
+    // Heading marker (your car icon)
+    let navHeadingMarker = null;
+    let lastNavLatLng = null;
+
+    const headingIcon = L.divIcon({
+      className: '',
+      html: '<div class="heading-marker"><div class="heading-marker-arrow"></div></div>',
+      iconSize: [26, 26],
+      iconAnchor: [13, 13]
+    });
+
+    const btnFollowToggle = document.getElementById('btn-follow-toggle');
+    const btnFollowLabel = document.getElementById('btn-follow-label');
+    let followMap = true;
+
+    btnFollowToggle.addEventListener('click', () => {
+      followMap = !followMap;
+      btnFollowLabel.textContent = followMap ? 'Follow map: ON' : 'Follow map: OFF';
+      btnFollowToggle.classList.toggle('primary', followMap);
+      if (followMap) {
+        infoText.textContent = 'Map will follow your position.';
+      } else {
+        infoText.textContent = 'Map will stay where you put it.';
+      }
+    });
+
+    // Bearing in degrees from point A to point B (0–360, 0 = north)
+    function computeBearing(lat1, lon1, lat2, lon2) {
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const y = Math.sin(Δλ) * Math.cos(φ2);
+      const x =
+        Math.cos(φ1) * Math.sin(φ2) -
+        Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+
+      let θ = Math.atan2(y, x) * 180 / Math.PI;  // -180..+180
+      if (θ < 0) θ += 360;                        // 0..360
+      return θ;
+    }
+
+    function startNavigation() {
+      if (!navigator.geolocation) {
+        infoText.textContent =
+          'Geolocation is not supported by this device; cannot start navigation.';
+        return;
+      }
+
+      if (!routePoints.length) {
+        infoText.textContent =
+          'Create a route or trip first, then start navigation.';
+        return;
+      }
+
+      if (watchId !== null) {
+        infoText.textContent = 'Navigation is already running.';
+        return;
+      }
+
+      infoText.textContent = 'Starting navigation...';
+
+      lastNavLatLng = null;
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+          const latlng = [lat, lng];
+
+          if (!navHeadingMarker) {
+            navHeadingMarker = L.marker(latlng, { icon: headingIcon }).addTo(map);
+          } else {
+            navHeadingMarker.setLatLng(latlng);
+          }
+
+          if (followMap) {
+            map.setView(latlng, map.getZoom() < 15 ? 15 : map.getZoom());
+          }
+
+          if (lastNavLatLng) {
+            const headingDeg = computeBearing(
+              lastNavLatLng[0],
+              lastNavLatLng[1],
+              lat,
+              lng
+            );
+
+            const el = navHeadingMarker.getElement();
+            if (el) {
+              const arrow = el.querySelector('.heading-marker-arrow');
+              if (arrow) {
+                arrow.style.transform = `rotate(${headingDeg}deg)`;
+              }
+            }
+          }
+
+          lastNavLatLng = [lat, lng];
+
+          const lastStop = routePoints[routePoints.length - 1];
+          if (lastStop) {
+            const dMeters = L.latLng(lat, lng).distanceTo(
+              L.latLng(lastStop[0], lastStop[1])
+            );
+            const dKm = dMeters / 1000;
+
+            let base = 'Navigation active.';
+            if (lastRouteSummary) {
+              base += ` Total route: ${lastRouteSummary.distanceKm.toFixed(
+                2
+              )} km (~${lastRouteSummary.durationMin.toFixed(1)} min).`;
+            }
+            base += ` Straight-line distance to final stop: ${dKm.toFixed(2)} km.`;
+            infoText.textContent = base;
+
+            if (navHud) {
+              let kmh = null;
+              if (
+                typeof position.coords.speed === 'number' &&
+                !Number.isNaN(position.coords.speed)
+              ) {
+                kmh = position.coords.speed * 3.6;
+              }
+
+              let hud = `To final: ${dKm.toFixed(1)} km`;
+
+              if (lastRouteSummary) {
+                const stopsCount =
+                  typeof lastRouteSummary.stopsCount === 'number'
+                    ? lastRouteSummary.stopsCount
+                    : routePoints.length;
+
+                const stopsLabel =
+                  stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
+
+                hud += ` • Trip: ${stopsLabel}, ` +
+                  `${lastRouteSummary.distanceKm.toFixed(1)} km, ` +
+                  `~${lastRouteSummary.durationMin.toFixed(0)} min`;
+              }
+
+              if (kmh !== null) {
+                hud += ` • Speed: ${kmh.toFixed(0)} km/h`;
+              }
+
+              navHud.textContent = hud;
+            }
+          }
+        },
+        (error) => {
+          console.error('Nav watch error:', error);
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              infoText.textContent = 'Location access denied for navigation.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              infoText.textContent =
+                'Position unavailable; navigation cannot update.';
+              break;
+            case error.TIMEOUT:
+              infoText.textContent =
+                'Timeout while trying to update navigation position.';
+              break;
+            default:
+              infoText.textContent =
+                'Unknown error while updating navigation position.';
+          }
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+
+      navHud.textContent = 'Navigation active...';
+    }
+
+    function stopNavigation() {
+      if (watchId !== null) {
+        navigator.geolocation.clearWatch(watchId);
+        watchId = null;
+      }
+      if (navHeadingMarker) {
+        map.removeLayer(navHeadingMarker);
+        navHeadingMarker = null;
+      }
+      lastNavLatLng = null;
+      infoText.textContent = 'Navigation stopped.';
+      navHud.textContent = 'Route loaded. Navigation not active.';
+    }
+
+    btnStartNav.addEventListener('click', startNavigation);
+    btnStopNav.addEventListener('click', stopNavigation);
+
+    // ---- Restore last route (and HUD) from localStorage ----
+    function restoreRouteFromStorage() {
+      let savedPoints = null;
+      let savedSummary = null;
+      try {
+        const pointsRaw = localStorage.getItem(ROUTE_KEY);
+        if (pointsRaw) {
+          savedPoints = JSON.parse(pointsRaw);
+        }
+        const summaryRaw = localStorage.getItem(ROUTE_SUMMARY_KEY);
+        if (summaryRaw) {
+          savedSummary = JSON.parse(summaryRaw);
+        }
+      } catch (e) {
+        console.error('Error restoring route from storage', e);
+      }
+
+      if (!Array.isArray(savedPoints) || !savedPoints.length) {
+        navHud.textContent = 'No route active yet.';
+        return;
+      }
+
       routePoints = [];
+      routeMarkers.forEach((m) => map.removeLayer(m));
+      routeMarkers = [];
       if (roadRoutePolyline) {
         map.removeLayer(roadRoutePolyline);
         roadRoutePolyline = null;
       }
-      routeMarkers.forEach((m) => map.removeLayer(m)
+
+      savedPoints.forEach(([lat, lng]) => {
+        routePoints.push([lat, lng]);
+        const marker = L.circleMarker([lat, lng], { radius: 5 }).addTo(map);
+        routeMarkers.push(marker);
+      });
+
+      updateRoadRoute().catch((err) => console.error(err));
+
+      if (savedSummary && typeof savedSummary.distanceKm === 'number') {
+        lastRouteSummary = savedSummary;
+
+        const stopsCount = Array.isArray(savedPoints) ? savedPoints.length : 0;
+        const stopsLabel =
+          stopsCount === 1 ? '1 stop' : `${stopsCount} stops`;
+
+        navHud.textContent =
+          `Trip ready • ${stopsLabel} • ` +
+          `${savedSummary.distanceKm.toFixed(1)} km • ` +
+          `~${savedSummary.durationMin.toFixed(0)} min`;
+      } else {
+        navHud.textContent = 'Route restored. Distance will be recalculated.';
+      }
+    }
+
+    restoreRouteFromStorage();
+
+    
+    // ------------ Public app API for modules (Find a Seat, etc.) ------------
+    function emitPoiLayerChanged(layerId) {
+      try {
+        const ev = new CustomEvent('osmrp:poi-changed', { detail: { layerId } });
+        window.dispatchEvent(ev);
+        document.dispatchEvent(ev);
+      } catch {}
+    }
+
+    function registerPoiLayer(def) {
+      if (!def || !def.id) throw new Error('registerPoiLayer requires { id, name }');
+      if (poiLayers[def.id]) return poiLayers[def.id];
+
+      const entry = {
+        id: def.id,
+        name: def.name || def.id,
+        color: def.color || '#111827',
+        isBuiltin: !!def.isBuiltin,
+        notes: def.notes || '',
+        items: Array.isArray(def.items) ? def.items.slice() : [],
+        layer: L.layerGroup().addTo(map)
+      };
+
+      entry.items.forEach((item) => {
+        const marker = createPoiMarker(entry, item);
+        entry.layer.addLayer(marker);
+      });
+
+      poiLayers[entry.id] = entry;
+      refreshPlacesLayerSelect(entry.id);
+      emitPoiLayerChanged(entry.id);
+      return entry;
+    }
+
+    function setActivePoiLayer(layerId) {
+      if (!layerId || !poiLayers[layerId]) return;
+      activePoiLayerId = layerId;
+      if (placesLayerSelect) placesLayerSelect.value = layerId;
+      refreshShareLayerSelect(activePoiLayerId);
+    }
+
+    window.OSMRP = {
+      map,
+      poiLayers,
+      centreLayers,
+      registerPoiLayer,
+      setActivePoiLayer,
+      addPoiItem,
+      createPoiMarker,
+      refreshPlacesLayerSelect,
+      emitPoiLayerChanged,
+      dispatchPoiChanged: () => emitPoiLayerChanged(activePoiLayerId),
+      getLastTap: () => lastTapLatLng || null,
+      getUserLatLng: () => (window.__osmrpUserLatLng || null),
+      get lastKnownLocation() { return window.__osmrpUserLatLng || null; }
+    };
+
+    // Fire a ready event so feature modules can attach safely.
+    window.dispatchEvent(new CustomEvent('osmrp:ready'));
+    document.dispatchEvent(new CustomEvent('osmrp:ready'));
+
+
+    // ------------ Service worker registration ------------
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('sw.js')
+          .then((reg) => {
+            console.log('Service worker registered', reg.scope);
+          })
+          .catch((err) => {
+            console.error('Service worker registration failed', err);
+          });
+      });
+    }
+
+    // --- Legend layer toggles (delegated; supports dynamically injected legend items) ---
+    const layerLegendEl = document.getElementById("layer-legend");
+
+    if (layerLegendEl) {
+      layerLegendEl.addEventListener('change', (e) => {
+        const cb = e.target && e.target.closest
+          ? e.target.closest('input[type="checkbox"][data-layer]')
+          : null;
+        if (!cb) return;
+
+        const layerId = cb.dataset.layer;
+        const checked = cb.checked;
+
+        // look first in centreLayers, then in poiLayers
+        const poiEntry = poiLayers && poiLayers[layerId];
+        const layer =
+          (centreLayers && centreLayers[layerId]) ||
+          (poiEntry && poiEntry.layer);
+
+        if (!layer) return;
+
+        if (checked) {
+          layer.addTo(map);
+        } else {
+          map.removeLayer(layer);
+        }
+      });
+    }
+
+    // --- Collapsible legend chip behaviour stays the same ---
+    const legendToggleBtn = document.getElementById("legend-toggle");
+
+    if (legendToggleBtn && layerLegendEl) {
+      legendToggleBtn.addEventListener("click", () => {
+        layerLegendEl.classList.toggle("collapsed");
+      });
+    }
+
+  </script>
+</body>
+</html>
