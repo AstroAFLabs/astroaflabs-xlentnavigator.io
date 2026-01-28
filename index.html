@@ -2790,7 +2790,10 @@ async function applyDeepLinkFromQuery() {
     }
   }
 }
-applyDeepLinkFromQuery().catch(console.error);
+window.addEventListener('osmrp:ready', () => {
+  applyDeepLinkFromQuery().catch(console.error);
+}, { once: true });
+
     // ------------ Import KML / KMZ / GPX / GeoJSON ------------
     const fileInput = document.getElementById('file-input');
     const clearImportsBtn = document.getElementById('clear-imports-btn');
