@@ -2726,6 +2726,71 @@ addSearchWaypointBtn.addEventListener('click', () => {
       closeTripModal();
     });
 
+function parseStopsParam(stopsStr) {
+  // "lat,lng|Label;lat,lng|Label"
+  return stopsStr.split(';').map(item => {
+    const [coords, labelRaw] = item.split('|');
+    const [latStr, lngStr] = (coords || '').split(',');
+    return {
+      lat: parseFloat(latStr),
+      lng: parseFloat(lngStr),
+      label: decodeURIComponent(labelRaw || '')
+    };
+  }).filter(s => Number.isFinite(s.lat) && Number.isFinite(s.lng));
+}
+
+async function geocodeAddressToLatLng(address) {
+  // Reuse Nominatim (same approach you already use)
+  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&addressdetails=1&limit=1`;
+  const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+  const data = await res.json();
+  if (!data || !data.length) return null;
+  return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+}
+
+async function applyDeepLinkFromQuery() {
+  const params = new URLSearchParams(location.search);
+
+  // Multi-stop
+  const stops = params.get('stops');
+  if (stops) {
+    const parsed = parseStopsParam(stops);
+    if (parsed.length) {
+      clearRouteOnly?.();
+      parsed.forEach(s => addWaypoint(s.lat, s.lng, s.label || 'Stop'));
+      map.setView([parsed[0].lat, parsed[0].lng], 15);
+    }
+    return;
+  }
+
+  // Single dest (coords)
+  const dest = params.get('dest');
+  const label = params.get('label') ? decodeURIComponent(params.get('label')) : 'Destination';
+  if (dest) {
+    const [latStr, lngStr] = dest.split(',');
+    const lat = parseFloat(latStr);
+    const lng = parseFloat(lngStr);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      clearRouteOnly?.();
+      addWaypoint(lat, lng, label);
+      map.setView([lat, lng], 16);
+    }
+    return;
+  }
+
+  // Address fallback
+  const address = params.get('address');
+  if (address) {
+    const decoded = decodeURIComponent(address);
+    const ll = await geocodeAddressToLatLng(decoded);
+    if (ll) {
+      clearRouteOnly?.();
+      addWaypoint(ll.lat, ll.lng, label);
+      map.setView([ll.lat, ll.lng], 16);
+    }
+  }
+}
+
     // ------------ Import KML / KMZ / GPX / GeoJSON ------------
     const fileInput = document.getElementById('file-input');
     const clearImportsBtn = document.getElementById('clear-imports-btn');
