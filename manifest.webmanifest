@@ -1,7 +1,7 @@
 {
   "name": "OSM Route Planner",
   "short_name": "RoutePlanner",
-  "start_url": "/",
+  "start_url": "clients.html",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
