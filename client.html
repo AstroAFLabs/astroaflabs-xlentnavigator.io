@@ -114,22 +114,107 @@
     // --- Demo clients (10) ---
     // You can replace these with real ones later.
     // If lat/lng is missing, the app will fall back to address-based deep link.
-    const DEMO_CLIENTS = [
-      { id: "libby", name: "Libby", address: "North Terrace, Adelaide SA",     lat: -34.9190, lng: 138.6040, notes: "Morning visit preferred", today: true  },
-      { id: "james", name: "James", address: "Rundle Mall, Adelaide SA",       lat: -34.9236, lng: 138.6010, notes: "Parking is tricky",        today: true  },
-      { id: "ace",   name: "Ace",   address: "Glenelg Beach, Glenelg SA",      lat: -34.9809, lng: 138.5170, notes: "Call on arrival",         today: false },
-      { id: "grace", name: "Grace", address: "Norwood Parade, Norwood SA",    lat: -34.9203, lng: 138.6293, notes: "Gate latch sticks",        today: false },
-      { id: "milan", name: "Milan", address: "Henley Beach SA",               lat: -34.9193, lng: 138.4945, notes: "Dog on property",          today: true  },
+   const DEMO_CLIENTS = [
+  {
+    id: "sam-thompson",
+    name: "Sam Thompson",
+    group: "Yellow",
+    address: "2 Avro Ave, Hendon SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      mon: { pickup: "09:05", dropoff: "16:00" },
+      tue: { pickup: "09:10", dropoff: "15:55" },
+      wed: { pickup: "09:05", dropoff: "16:00" },
+      thu: { pickup: "09:10", dropoff: "16:05" }
+    }
+  },
+  {
+    id: "ben-giaccio",
+    name: "Ben Giaccio",
+    group: "Yellow",
+    address: "37 Dumfries Avenue, Seaton SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      mon: { pickup: "09:15", dropoff: "15:45" },
+      wed: { pickup: "09:15", dropoff: "15:35" },
+      fri: { pickup: "09:15", dropoff: "15:50" }
+    }
+  },
+  {
+    id: "mathew-lam",
+    name: "Mathew Lam",
+    group: "Yellow",
+    address: "44 McCole Circuit, Allenby Gardens SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      mon: { pickup: "09:25", dropoff: "15:35" },
+      tue: { pickup: "09:30", dropoff: "15:30" },
+      thu: { pickup: "09:35", dropoff: "15:30" },
+      fri: { pickup: "09:30", dropoff: "15:30" }
+    }
+  },
+  {
+    id: "bethany-strube",
+    name: "Bethany Strube",
+    group: "Yellow",
+    address: "60 Murray St, Albert Park SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      tue: { pickup: "09:05", dropoff: "15:45" },
+      thu: { pickup: "09:05", dropoff: "16:00" }
+    }
+  },
+  {
+    id: "carly-lopian",
+    name: "Carly Lopian",
+    group: "Yellow",
+    address: "18 Anderson Street, Fulham Gardens SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      wed: { pickup: "09:25", dropoff: "15:45" }
+    }
+  },
+  {
+    id: "catherine-koba",
+    name: "Catherine Koba",
+    group: "Yellow",
+    address: "2 Cowley Ave, Croydon Park SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      wed: { pickup: "09:45", dropoff: "15:15" }
+    }
+  },
+  {
+    id: "aaron-wegner",
+    name: "Aaron Wegner",
+    group: "Yellow",
+    address: "9 Canino Drive, Kidman Park SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      thu: { pickup: "09:25", dropoff: "15:15" },
+      fri: { pickup: "09:20", dropoff: "15:40" }
+    }
+  },
+  {
+    id: "aline-bahati",
+    name: "Aline Bahati",
+    group: "Yellow",
+    address: "14 Nyora Crescent, Taperoo SA",
+    lat: null, lng: null,
+    notes: "Thu drop-off: National Storage – Cheltenham",
+    weeklySchedule: {
+      thu: { pickup: "10:00", dropoff: "16:15" }
+    }
+  }
+];
 
-      // A few without coords to prove address-mode works too:
-      { id: "c6", name: "Client Six",   address: "Marion Shopping Centre, SA", lat: null, lng: null, notes: "No coords yet", today: false },
-      { id: "c7", name: "Client Seven", address: "Tea Tree Plaza, SA",         lat: null, lng: null, notes: "No coords yet", today: false },
-
-      // Back to coords:
-      { id: "c8", name: "Client Eight", address: "Semaphore SA",               lat: -34.8398, lng: 138.4798, notes: "Afternoon ok", today: false },
-      { id: "c9", name: "Client Nine",  address: "Burnside Village, SA",       lat: -34.9392, lng: 138.6518, notes: "Prefers text",  today: true  },
-      { id: "c10", name: "Client Ten",  address: "Port Adelaide SA",           lat: -34.8468, lng: 138.5038, notes: "Unit 3",        today: false }
-    ];
 
     // --- Storage ---
     const STORAGE_KEY = "client_runner_clients_v1";
@@ -149,6 +234,22 @@
     function saveClients(clients) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
     }
+    function todayKey() {
+  const d = new Date().getDay(); // 0 Sun .. 6 Sat
+  return ["sun","mon","tue","wed","thu","fri","sat"][d];
+}
+
+function scheduleForToday(c) {
+  const k = todayKey();
+  return (c.weeklySchedule && c.weeklySchedule[k]) ? c.weeklySchedule[k] : null;
+}
+function effectiveToday(c) {
+  // If user has manually overridden, respect that.
+  if (typeof c.todayOverride === "boolean") return c.todayOverride;
+  // Otherwise use schedule
+  return !!scheduleForToday(c);
+}
+
 
     // --- Deep link helpers ---
     function plannerUrlForClient(c) {
@@ -189,21 +290,24 @@
       const todayOnly = els.todayOnly.checked;
 
       const filtered = clients.filter(c => {
-        if (todayOnly && !c.today) return false;
+     if (todayOnly && !effectiveToday(c)) return false;
+
         if (!query) return true;
         return (c.name || "").toLowerCase().includes(query)
           || (c.address || "").toLowerCase().includes(query);
       });
 
-      const todayCount = clients.filter(c => c.today).length;
-      const withCoordsToday = clients.filter(c => c.today && Number.isFinite(c.lat) && Number.isFinite(c.lng)).length;
-      const withoutCoordsToday = clients.filter(c => c.today && !(Number.isFinite(c.lat) && Number.isFinite(c.lng))).length;
+  const todayCount = clients.filter(c => effectiveToday(c)).length;
+const withCoordsToday = clients.filter(c => effectiveToday(c) && Number.isFinite(c.lat) && Number.isFinite(c.lng)).length;
+const withoutCoordsToday = clients.filter(c => effectiveToday(c) && !(Number.isFinite(c.lat) && Number.isFinite(c.lng))).length;
 
       els.meta.textContent =
         `${filtered.length} shown • ${clients.length} total • Today: ${todayCount} (coords: ${withCoordsToday}, address-only: ${withoutCoordsToday})`;
 
       // Show warning if any are missing coords
-      const anyMissing = clients.some(c => !(Number.isFinite(c.lat) && Number.isFinite(c.lng)));
+     const relevant = todayOnly ? filtered.filter(c => effectiveToday(c)) : filtered;
+const anyMissing = relevant.some(c => !(Number.isFinite(c.lat) && Number.isFinite(c.lng)));
+
       els.warning.style.display = anyMissing ? "block" : "none";
 
       els.list.innerHTML = "";
@@ -224,22 +328,42 @@
         const notes = document.createElement("p");
         notes.className = "notes";
         notes.textContent = c.notes || "";
+        // If the client is scheduled today, show pickup/drop-off times
+const sched = scheduleForToday(c);
+if (sched) {
+  const when = document.createElement("p");
+  when.className = "notes";
+  when.textContent = `Today: pickup ${sched.pickup} • drop-off ${sched.dropoff}`;
+  left.appendChild(when);
+}
 
-        left.appendChild(name);
-        left.appendChild(addr);
-        if (c.notes) left.appendChild(notes);
+
+       left.appendChild(name);
+left.appendChild(addr);
+
+// If the client is scheduled today, show pickup/drop-off times
+const sched = scheduleForToday(c);
+if (sched) {
+  const when = document.createElement("p");
+  when.className = "notes";
+  when.textContent = `Today: pickup ${sched.pickup} • drop-off ${sched.dropoff}`;
+  left.appendChild(when);
+}
+
+if (c.notes) left.appendChild(notes);
+
 
         const right = document.createElement("div");
         right.className = "actions";
 
         const todayBadge = document.createElement("label");
-        todayBadge.className = "badge" + (c.today ? " on" : "");
+       todayBadge.className = "badge" + (effectiveToday(c) ? " on" : "");
         todayBadge.title = "Toggle Today";
         const cb = document.createElement("input");
         cb.type = "checkbox";
-        cb.checked = !!c.today;
+       cb.checked = !!effectiveToday(c);
         cb.addEventListener("change", () => {
-          c.today = cb.checked;
+         c.todayOverride = cb.checked; // user override
           saveClients(clients);
           render();
         });
