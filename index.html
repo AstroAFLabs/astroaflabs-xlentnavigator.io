@@ -1,1 +1,454 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Client Runner</title>
+  <style>
+    :root { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    body { margin: 0; background: #f6f7fb; color: #111; }
+    header { padding: 16px; background: white; position: sticky; top: 0; border-bottom: 1px solid #e7e7ee; z-index: 10; }
+    h1 { font-size: 18px; margin: 0 0 10px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    input[type="search"]{
+      flex: 1;
+      min-width: 220px;
+      padding: 10px 12px;
+      border: 1px solid #d9d9e2;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 14px;
+      outline: none;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 10px;
+      background: #fff;
+      border: 1px solid #d9d9e2;
+      border-radius: 999px;
+      font-size: 13px;
+      user-select: none;
+    }
+    .chip input { transform: scale(1.1); }
+    main { padding: 14px 16px 80px; max-width: 900px; margin: 0 auto; }
+    .meta { font-size: 13px; color: #444; margin: 10px 0 14px; }
+    .list { display: grid; gap: 10px; }
+    .card {
+      background: #fff;
+      border: 1px solid #e7e7ee;
+      border-radius: 14px;
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+    }
+    .name { font-weight: 700; margin: 0; font-size: 15px; }
+    .addr { margin: 4px 0 0; font-size: 13px; color: #333; }
+    .notes { margin: 6px 0 0; font-size: 12px; color: #666; }
+    .actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    button {
+      border: 1px solid #d9d9e2;
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button.primary { background: #111; color: #fff; border-color: #111; }
+    button:active { transform: translateY(1px); }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid #d9d9e2;
+      background: #fdfdff;
+    }
+    .badge.on { border-color: #111; }
+    footer {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: rgba(246,247,251,0.9);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid #e7e7ee;
+      padding: 12px 16px;
+    }
+    .footer-inner { max-width: 900px; margin: 0 auto; display: flex; gap: 10px; flex-wrap: wrap; }
+    .hint { font-size: 12px; color: #555; margin-left: auto; }
+    .small { font-size: 12px; color: #666; }
+    .danger { color: #a10000; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Client Runner</h1>
+    <div class="row">
+      <input id="q" type="search" placeholder="Search name or address…" autocomplete="off" />
+      <label class="chip" title="Show only clients marked for today">
+        <input id="todayOnly" type="checkbox" />
+        Today only
+      </label>
+      <button id="reset" title="Reset Today flags to the demo defaults">Reset demo</button>
+    </div>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <main>
+    <div class="list" id="list"></div>
+    <p class="small danger" id="warning" style="display:none;">
+      Note: Some clients have no coordinates. They will open the trip planner using address search instead.
+    </p>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <button class="primary" id="openRun">Open Today’s Run (multi-stop)</button>
+      <button id="markAllToday">Mark all as Today</button>
+      <button id="clearToday">Clear Today</button>
+      <div class="hint">Opens <strong>index.html</strong> in this folder</div>
+    </div>
+  </footer>
+
+  <script>
+    // --- Demo clients (10) ---
+    // You can replace these with real ones later.
+    // If lat/lng is missing, the app will fall back to address-based deep link.
+   const DEMO_CLIENTS = [
+  {
+    id: "sam-thompson",
+    name: "Sam Thompson",
+    group: "Yellow",
+    address: "2 Avro Ave, Hendon SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      mon: { pickup: "09:05", dropoff: "16:00" },
+      tue: { pickup: "09:10", dropoff: "15:55" },
+      wed: { pickup: "09:05", dropoff: "16:00" },
+      thu: { pickup: "09:10", dropoff: "16:05" }
+    }
+  },
+  {
+    id: "ben-giaccio",
+    name: "Ben Giaccio",
+    group: "Yellow",
+    address: "37 Dumfries Avenue, Seaton SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      mon: { pickup: "09:15", dropoff: "15:45" },
+      wed: { pickup: "09:15", dropoff: "15:35" },
+      fri: { pickup: "09:15", dropoff: "15:50" }
+    }
+  },
+  {
+    id: "mathew-lam",
+    name: "Mathew Lam",
+    group: "Yellow",
+    address: "44 McCole Circuit, Allenby Gardens SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      mon: { pickup: "09:25", dropoff: "15:35" },
+      tue: { pickup: "09:30", dropoff: "15:30" },
+      thu: { pickup: "09:35", dropoff: "15:30" },
+      fri: { pickup: "09:30", dropoff: "15:30" }
+    }
+  },
+  {
+    id: "bethany-strube",
+    name: "Bethany Strube",
+    group: "Yellow",
+    address: "60 Murray St, Albert Park SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      tue: { pickup: "09:05", dropoff: "15:45" },
+      thu: { pickup: "09:05", dropoff: "16:00" }
+    }
+  },
+  {
+    id: "carly-lopian",
+    name: "Carly Lopian",
+    group: "Yellow",
+    address: "18 Anderson Street, Fulham Gardens SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      wed: { pickup: "09:25", dropoff: "15:45" }
+    }
+  },
+  {
+    id: "catherine-koba",
+    name: "Catherine Koba",
+    group: "Yellow",
+    address: "2 Cowley Ave, Croydon Park SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      wed: { pickup: "09:45", dropoff: "15:15" }
+    }
+  },
+  {
+    id: "aaron-wegner",
+    name: "Aaron Wegner",
+    group: "Yellow",
+    address: "9 Canino Drive, Kidman Park SA",
+    lat: null, lng: null,
+    notes: "",
+    weeklySchedule: {
+      thu: { pickup: "09:25", dropoff: "15:15" },
+      fri: { pickup: "09:20", dropoff: "15:40" }
+    }
+  },
+  {
+    id: "aline-bahati",
+    name: "Aline Bahati",
+    group: "Yellow",
+    address: "14 Nyora Crescent, Taperoo SA",
+    lat: null, lng: null,
+    notes: "Thu drop-off: National Storage – Cheltenham",
+    weeklySchedule: {
+      thu: { pickup: "10:00", dropoff: "16:15" }
+    }
+  }
+];
+
+
+    // --- Storage ---
+    const STORAGE_KEY = "client_runner_clients_v1";
+
+    function loadClients() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(DEMO_CLIENTS);
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return structuredClone(DEMO_CLIENTS);
+        return parsed;
+      } catch {
+        return structuredClone(DEMO_CLIENTS);
+      }
+    }
+
+    function saveClients(clients) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(clients));
+    }
+    function todayKey() {
+  const d = new Date().getDay(); // 0 Sun .. 6 Sat
+  return ["sun","mon","tue","wed","thu","fri","sat"][d];
+}
+
+function scheduleForToday(c) {
+  const k = todayKey();
+  return (c.weeklySchedule && c.weeklySchedule[k]) ? c.weeklySchedule[k] : null;
+}
+function effectiveToday(c) {
+  // If user has manually overridden, respect that.
+  if (typeof c.todayOverride === "boolean") return c.todayOverride;
+  // Otherwise use schedule
+  return !!scheduleForToday(c);
+}
+
+
+    // --- Deep link helpers ---
+    function plannerUrlForClient(c) {
+      const label = encodeURIComponent(c.name);
+      if (Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
+        return `index.html?dest=${c.lat},${c.lng}&label=${label}`;
+      }
+      // Fallback: address-mode
+      return `index.html?address=${encodeURIComponent(c.address)}&label=${label}`;
+    }
+
+    function stopsParamFromClients(clients) {
+      // Format: "lat,lng|Label;lat,lng|Label"
+      // Only include clients with coords for multi-stop (keeps it reliable).
+      const parts = clients
+        .filter(c => Number.isFinite(c.lat) && Number.isFinite(c.lng))
+        .map(c => `${c.lat},${c.lng}|${encodeURIComponent(c.name)}`);
+      return parts.join(";");
+    }
+
+    // --- UI rendering ---
+    const els = {
+      list: document.getElementById("list"),
+      meta: document.getElementById("meta"),
+      q: document.getElementById("q"),
+      todayOnly: document.getElementById("todayOnly"),
+      reset: document.getElementById("reset"),
+      openRun: document.getElementById("openRun"),
+      markAllToday: document.getElementById("markAllToday"),
+      clearToday: document.getElementById("clearToday"),
+      warning: document.getElementById("warning")
+    };
+
+    let clients = loadClients();
+
+    function render() {
+      const query = (els.q.value || "").trim().toLowerCase();
+      const todayOnly = els.todayOnly.checked;
+
+      const filtered = clients.filter(c => {
+     if (todayOnly && !effectiveToday(c)) return false;
+
+        if (!query) return true;
+        return (c.name || "").toLowerCase().includes(query)
+          || (c.address || "").toLowerCase().includes(query);
+      });
+
+  const todayCount = clients.filter(c => effectiveToday(c)).length;
+const withCoordsToday = clients.filter(c => effectiveToday(c) && Number.isFinite(c.lat) && Number.isFinite(c.lng)).length;
+const withoutCoordsToday = clients.filter(c => effectiveToday(c) && !(Number.isFinite(c.lat) && Number.isFinite(c.lng))).length;
+
+      els.meta.textContent =
+        `${filtered.length} shown • ${clients.length} total • Today: ${todayCount} (coords: ${withCoordsToday}, address-only: ${withoutCoordsToday})`;
+
+      // Show warning if any are missing coords
+     const relevant = todayOnly ? filtered.filter(c => effectiveToday(c)) : filtered;
+const anyMissing = relevant.some(c => !(Number.isFinite(c.lat) && Number.isFinite(c.lng)));
+
+      els.warning.style.display = anyMissing ? "block" : "none";
+
+      els.list.innerHTML = "";
+      for (const c of filtered) {
+        const card = document.createElement("div");
+        card.className = "card";
+
+        const left = document.createElement("div");
+
+        const name = document.createElement("p");
+        name.className = "name";
+        name.textContent = c.name;
+
+        const addr = document.createElement("p");
+        addr.className = "addr";
+        addr.textContent = c.address;
+
+        const notes = document.createElement("p");
+        notes.className = "notes";
+        notes.textContent = c.notes || "";
+        // If the client is scheduled today, show pickup/drop-off times
+const sched = scheduleForToday(c);
+if (sched) {
+  const when = document.createElement("p");
+  when.className = "notes";
+  when.textContent = `Today: pickup ${sched.pickup} • drop-off ${sched.dropoff}`;
+  left.appendChild(when);
+}
+
+
+       left.appendChild(name);
+left.appendChild(addr);
+
+// If the client is scheduled today, show pickup/drop-off times
+const sched = scheduleForToday(c);
+if (sched) {
+  const when = document.createElement("p");
+  when.className = "notes";
+  when.textContent = `Today: pickup ${sched.pickup} • drop-off ${sched.dropoff}`;
+  left.appendChild(when);
+}
+
+if (c.notes) left.appendChild(notes);
+
+
+        const right = document.createElement("div");
+        right.className = "actions";
+
+        const todayBadge = document.createElement("label");
+       todayBadge.className = "badge" + (effectiveToday(c) ? " on" : "");
+        todayBadge.title = "Toggle Today";
+        const cb = document.createElement("input");
+        cb.type = "checkbox";
+       cb.checked = !!effectiveToday(c);
+        cb.addEventListener("change", () => {
+         c.todayOverride = cb.checked; // user override
+          saveClients(clients);
+          render();
+        });
+        const span = document.createElement("span");
+        span.textContent = "Today";
+        todayBadge.appendChild(cb);
+        todayBadge.appendChild(span);
+
+        const openBtn = document.createElement("button");
+        openBtn.className = "primary";
+        openBtn.textContent = "Open in Trip Planner";
+        openBtn.addEventListener("click", () => {
+          const url = plannerUrlForClient(c);
+          // same tab:
+          window.location.href = url;
+        });
+
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "Copy link";
+        copyBtn.addEventListener("click", async () => {
+          const url = new URL(plannerUrlForClient(c), window.location.href).toString();
+          try {
+            await navigator.clipboard.writeText(url);
+            copyBtn.textContent = "Copied!";
+            setTimeout(() => (copyBtn.textContent = "Copy link"), 900);
+          } catch {
+            alert("Clipboard permission blocked. Long-press the address bar after opening, or use a different browser.");
+          }
+        });
+
+        right.appendChild(todayBadge);
+        right.appendChild(openBtn);
+        right.appendChild(copyBtn);
+
+        card.appendChild(left);
+        card.appendChild(right);
+
+        els.list.appendChild(card);
+      }
+
+      // Enable/disable multi-stop button
+      const today = clients.filter(c => c.today);
+      const stops = stopsParamFromClients(today);
+      els.openRun.disabled = stops.length === 0;
+      els.openRun.title = stops.length === 0
+        ? "No Today clients with coordinates"
+        : "Opens trip planner with multi-stop list";
+    }
+
+    // --- Footer actions ---
+    els.openRun.addEventListener("click", () => {
+      const today = clients.filter(c => c.today);
+      const stops = stopsParamFromClients(today);
+      if (!stops) {
+        alert("None of your Today clients have coordinates, so a multi-stop run can’t be built reliably yet.");
+        return;
+      }
+      window.location.href = `index.html?stops=${stops}`;
+    });
+
+    els.markAllToday.addEventListener("click", () => {
+      clients.forEach(c => c.today = true);
+      saveClients(clients);
+      render();
+    });
+
+    els.clearToday.addEventListener("click", () => {
+      clients.forEach(c => c.today = false);
+      saveClients(clients);
+      render();
+    });
+
+    els.reset.addEventListener("click", () => {
+      clients = structuredClone(DEMO_CLIENTS);
+      saveClients(clients);
+      els.q.value = "";
+      els.todayOnly.checked = false;
+      render();
+    });
+
+    els.q.addEventListener("input", render);
+    els.todayOnly.addEventListener("change", render);
+
+    render();
+  </script>
+</body>
+</html>
 
