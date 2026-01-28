@@ -106,7 +106,7 @@
       <button class="primary" id="openRun">Open Today’s Run (multi-stop)</button>
       <button id="markAllToday">Mark all as Today</button>
       <button id="clearToday">Clear Today</button>
-      <div class="hint">Opens <strong>index.html</strong> in this folder</div>
+      <div class="hint">Opens <strong>planner.html</strong> in this folder</div>
     </div>
   </footer>
 
@@ -255,10 +255,10 @@ function effectiveToday(c) {
     function plannerUrlForClient(c) {
       const label = encodeURIComponent(c.name);
       if (Number.isFinite(c.lat) && Number.isFinite(c.lng)) {
-        return `index.html?dest=${c.lat},${c.lng}&label=${label}`;
+        return `planner.html?dest=${c.lat},${c.lng}&label=${label}`;
       }
       // Fallback: address-mode
-      return `index.html?address=${encodeURIComponent(c.address)}&label=${label}`;
+      return `planner.html?address=${encodeURIComponent(c.address)}&label=${label}`;
     }
 
     function stopsParamFromClients(clients) {
@@ -421,7 +421,7 @@ if (c.notes) left.appendChild(notes);
         alert("None of your Today clients have coordinates, so a multi-stop run can’t be built reliably yet.");
         return;
       }
-      window.location.href = `index.html?stops=${stops}`;
+      window.location.href = `planner.html?stops=${stops}`;
     });
 
     els.markAllToday.addEventListener("click", () => {
