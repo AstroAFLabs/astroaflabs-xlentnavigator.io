@@ -2790,7 +2790,7 @@ async function applyDeepLinkFromQuery() {
     }
   }
 }
-
+applyDeepLinkFromQuery().catch(console.error);
     // ------------ Import KML / KMZ / GPX / GeoJSON ------------
     const fileInput = document.getElementById('file-input');
     const clearImportsBtn = document.getElementById('clear-imports-btn');
