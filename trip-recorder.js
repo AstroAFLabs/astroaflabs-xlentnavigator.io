@@ -864,7 +864,11 @@
 
       if (activeTrip.status === 'recording') {
         activeTrip.status = 'interrupted';
-        activeTrip.pauseStartedAt = activeTrip.pauseStartedAt || isoNow();
+        const lastSavedPoint = Array.isArray(activeTrip.points) && activeTrip.points.length
+          ? activeTrip.points[activeTrip.points.length - 1]
+          : null;
+        activeTrip.pauseStartedAt = activeTrip.pauseStartedAt ||
+          (lastSavedPoint && lastSavedPoint.timestamp ? lastSavedPoint.timestamp : isoNow());
         await persistActive(true);
       }
 
